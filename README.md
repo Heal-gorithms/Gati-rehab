@@ -141,7 +141,7 @@ firebase deploy
 | Sumit Prasad | Firebase Config, Auth, AIEngine.jsx, Router | ✅ Initial Setup |
 | Member 2 | angleCalculations.js (getAngle, calculateAngles) | ✅ Function Shell |
 | Yash Singhal | scoring.js (form quality, ROM tracking) | ✅ Function Shell |
-| Yash Singhal | LoginPage, PatientDashboard, PWA Manifest | ✅ UI Ready |
+| Aaditya Mittal | LoginPage, PatientDashboard, PWA Manifest | ✅ UI Ready |
 | Aaditya Pawar | DoctorDashboard, PatientDetailView, Recharts | ✅ UI Ready |
 | Member 6 | service-worker.js, sync.js, offline features | ✅ PWA Shell |
 

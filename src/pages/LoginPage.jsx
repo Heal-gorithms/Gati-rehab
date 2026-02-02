@@ -18,21 +18,21 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [userType, setUserType] = useState('patient'); // 'patient' or 'doctor'
   const [authMode, setAuthMode] = useState('email'); // 'email', 'phone', 'forgot'
-  
+
   // Email/Password state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // Phone auth state
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
-  
+
   // Forgot password state
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
-  
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,11 +46,13 @@ const LoginPage = () => {
 
     try {
       const { userData } = await loginWithEmail(email, password);
-      
+
       // Navigate based on user type
-      if (userData.userType === 'doctor') {
+      // Check if userData exists before accessing properties
+      if (userData && userData.userType === 'doctor') {
         navigate('/doctor-dashboard');
       } else {
+        // Default to patient if userData is missing or userType is patient
         navigate('/patient-dashboard');
       }
     } catch (err) {
@@ -67,9 +69,9 @@ const LoginPage = () => {
 
     try {
       const { userData } = await loginWithGoogle();
-      
+
       // Navigate based on user type
-      if (userData.userType === 'doctor') {
+      if (userData && userData.userType === 'doctor') {
         navigate('/doctor-dashboard');
       } else {
         navigate('/patient-dashboard');
@@ -90,7 +92,7 @@ const LoginPage = () => {
     try {
       // Setup reCAPTCHA
       const recaptchaVerifier = setupRecaptcha('recaptcha-container');
-      
+
       // Send OTP
       const result = await sendPhoneOTP(phoneNumber, recaptchaVerifier);
       setConfirmationResult(result);
@@ -111,9 +113,9 @@ const LoginPage = () => {
 
     try {
       const { userData } = await verifyPhoneOTP(confirmationResult, otp);
-      
+
       // Navigate based on user type
-      if (userData.userType === 'doctor') {
+      if (userData && userData.userType === 'doctor') {
         navigate('/doctor-dashboard');
       } else {
         navigate('/patient-dashboard');
@@ -179,11 +181,10 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => setUserType('patient')}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                  userType === 'patient'
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${userType === 'patient'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 <User className="w-4 h-4 inline mr-2" />
                 Patient
@@ -191,11 +192,10 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => setUserType('doctor')}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                  userType === 'doctor'
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${userType === 'doctor'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 <Activity className="w-4 h-4 inline mr-2" />
                 Doctor
@@ -205,12 +205,14 @@ const LoginPage = () => {
             {/* Login Form */}
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="email"
+                    name="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -222,12 +224,14 @@ const LoginPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="password"
+                    name="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -353,10 +357,12 @@ const LoginPage = () => {
             {!otpSent ? (
               <form onSubmit={handleSendOTP} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number
                   </label>
                   <input
+                    id="phone"
+                    name="phone"
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
@@ -394,10 +400,12 @@ const LoginPage = () => {
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
                     Enter OTP
                   </label>
                   <input
+                    id="otp"
+                    name="otp"
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
@@ -452,12 +460,14 @@ const LoginPage = () => {
             {!resetSent ? (
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
+                      id="reset-email"
+                      name="email"
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
