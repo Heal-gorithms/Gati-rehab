@@ -186,7 +186,6 @@ const calculateSpeedScore = (frameData) => {
   if (timeDeltas.length === 0) return 100;
 
   // Optimal frame rate is around 30fps (33ms per frame)
-  const optimalDelta = 33;
   const avgDelta = timeDeltas.reduce((a, b) => a + b, 0) / timeDeltas.length;
 
   // Calculate variance in frame timing

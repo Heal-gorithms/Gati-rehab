@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Send, User, Bot, Sparkles, MessageSquare, ShieldCheck } from 'lucide-react';
 
-const NeuralChatModal = ({ isOpen, onClose, patientName = 'Neural Assistant' }) => {
+const NeuralChatModal = ({ isOpen, onClose, _patientName = 'Neural Assistant' }) => {
     const [messages, setMessages] = useState([
         { id: 1, text: "Hello Dr. Gati's Neural Assistant here. How can I help you analyze patient progress today?", sender: 'ai', time: '10:00 AM' }
     ]);

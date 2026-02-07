@@ -49,7 +49,6 @@ const DoctorDashboard = () => {
   };
 
   const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAdherence, setFilterAdherence] = useState('all');
   const [stats, setStats] = useState({
@@ -86,7 +85,6 @@ const DoctorDashboard = () => {
     // 1. Listen for patient updates
     const unsubscribe = subscribeToDoctorPatients(user.uid, async (updatedPatients) => {
       setPatients(updatedPatients);
-      setLoading(false);
 
       // 2. Pass the fresh data to charts immediately (Fixes Point 2 & 3)
       // This prevents re-fetching the patients inside the chart functions

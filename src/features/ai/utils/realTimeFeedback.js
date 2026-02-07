@@ -54,13 +54,11 @@ const FEEDBACK_MESSAGES = {
  * Calculate real-time feedback based on current vs ideal angles
  * @param {Object} currentAngles - Current angles from pose detection
  * @param {string} exerciseType - Type of exercise
- * @param {Object} previousState - Previous state for tracking changes
  * @returns {Object} - Feedback object with visual and audio cues
  */
 export const generateRealTimeFeedback = (
   currentAngles,
-  exerciseType,
-  previousState = {}
+  exerciseType
 ) => {
   if (!currentAngles || !IDEAL_ANGLES[exerciseType]) {
     return {
@@ -313,7 +311,7 @@ export const detectFormDeviations = (currentAngles, previousAngles = {}) => {
  * @returns {Object} - Complete feedback report
  */
 export const generateFeedbackReport = (angles, exerciseType, state = {}) => {
-  const realTimeFeedback = generateRealTimeFeedback(angles, exerciseType, state);
+  const realTimeFeedback = generateRealTimeFeedback(angles, exerciseType);
   const speedAnalysis = analyzeMovementSpeed(state.angleHistory || []);
   const deviations = detectFormDeviations(angles, state.previousAngles);
 

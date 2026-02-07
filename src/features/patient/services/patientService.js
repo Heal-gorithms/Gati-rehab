@@ -7,10 +7,11 @@ import {
   collection,
   query,
   where,
-  orderBy,
   limit,
   getDocs,
   onSnapshot,
+  addDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 
@@ -199,6 +200,25 @@ export const getTrendData = async (patientId) => {
       romData: [],
       qualityData: [],
     };
+  }
+};
+
+/**
+ * Log pain data to Firestore
+ */
+export const logPain = async (patientId, painData) => {
+  try {
+    const painLogsRef = collection(db, 'pain_logs');
+    const docRef = await addDoc(painLogsRef, {
+      ...painData,
+      patientId,
+      timestamp: serverTimestamp(),
+    });
+    console.log('[PatientService] Pain log saved:', docRef.id);
+    return { id: docRef.id, success: true };
+  } catch (error) {
+    console.error('[PatientService] Log pain error:', error);
+    throw error;
   }
 };
 
