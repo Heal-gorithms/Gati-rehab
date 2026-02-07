@@ -372,6 +372,12 @@ const PatientDashboard = () => {
             </div>
           </div>
         </div>
+
+        <div className="mt-16 mb-4 text-center">
+           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">
+             Measurements are approximate and intended for rehabilitation guidance only
+           </p>
+        </div>
       </main>
 
       <PainLoggerModal

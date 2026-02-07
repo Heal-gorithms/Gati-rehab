@@ -331,6 +331,12 @@ const DoctorDashboard = () => {
             </div>
           </div>
         </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">
+            Measurements are approximate and intended for rehabilitation guidance only
+          </p>
+        </div>
       </main>
 
       <SettingsModal
