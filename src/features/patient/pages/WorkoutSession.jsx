@@ -21,6 +21,7 @@ import NavHeader from '../../../shared/components/NavHeader';
 import { useAuth } from '../../auth/context/AuthContext';
 import { saveSession } from '../services/sessionService';
 import { calculateFormQualityScore, trackRangeOfMotion } from '../utils/enhancedScoring';
+import { logAction } from '../../../shared/utils/auditLogger';
 
 const WorkoutSession = () => {
   const navigate = useNavigate();
@@ -127,15 +128,21 @@ const WorkoutSession = () => {
     return () => clearInterval(timerRef.current);
   }, [sessionActive]);
 
-  const handleStartSession = () => {
+  const handleStartSession = async () => {
     setSessionActive(true);
     if (!sessionStartTime) setSessionStartTime(Date.now());
     setFeedback('Great! Start your first rep');
+    if (user) {
+      await logAction(user.uid, 'WORKOUT_START', { exercise: currentExercise });
+    }
   };
 
-  const handlePauseSession = () => {
+  const handlePauseSession = async () => {
     setSessionActive(false);
     setFeedback('Session paused');
+    if (user) {
+      await logAction(user.uid, 'WORKOUT_PAUSE', { exercise: currentExercise, elapsedSeconds: elapsedTime });
+    }
   };
 
   const handleEndSession = async () => {
@@ -156,6 +163,11 @@ const WorkoutSession = () => {
 
     try {
       if (user) {
+        await logAction(user.uid, 'WORKOUT_FINISH', {
+          exercise: currentExercise,
+          reps: repCount,
+          quality: finalQuality.overallScore
+        });
         await saveSession(sessionData, user.uid);
       }
       navigate('/patient-dashboard', { state: { sessionCompleted: true } });
