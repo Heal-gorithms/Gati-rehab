@@ -272,6 +272,7 @@ export const updateUserProfile = async (uid, data) => {
   try {
     const userRef = doc(db, 'users', uid);
     // Don't allow updating userType via this method for security
+    // eslint-disable-next-line no-unused-vars
     const { userType, ...updateData } = data;
     await updateDoc(userRef, {
       ...updateData,
