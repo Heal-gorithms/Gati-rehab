@@ -13,7 +13,7 @@ import {
 } from '../services/authService';
 
 // Updated Input to handle disabled state styling
-const Input = ({ icon, type, placeholder, value, onChange, id, name, className = '', ringColor, textColor, ...props }) => (
+const Input = ({ icon, type, placeholder, value, onChange, id, name, className = '', ringColor, textColor, suffix, ...props }) => (
   <div className="relative group">
     {icon && (
       <div className={`absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors ${textColor === 'text-blue-600' ? 'group-focus-within:text-blue-600' : 'group-focus-within:text-teal-600'}`}>
@@ -27,10 +27,15 @@ const Input = ({ icon, type, placeholder, value, onChange, id, name, className =
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full ${icon ? 'pl-11' : 'px-4'} pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-opacity-20 focus:border-transparent outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100 ${ringColor} ${className}`}
+      className={`w-full ${icon ? 'pl-11' : 'px-4'} ${suffix ? 'pr-12' : 'pr-4'} py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-opacity-20 focus:border-transparent outline-none transition-all font-medium text-slate-800 placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100 ${ringColor} ${className}`}
       {...props}
       required
     />
+    {suffix && (
+      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+        {suffix}
+      </div>
+    )}
   </div>
 );
 
@@ -71,6 +76,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [resetEmail, setResetEmail] = useState('');
@@ -268,7 +274,7 @@ const LoginPage = () => {
                 <div>
                   <Input
                     icon={<Lock className="w-5 h-5" />}
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     id="login-password"
                     name="password"
                     placeholder="Password"
@@ -278,6 +284,16 @@ const LoginPage = () => {
                     ringColor={ringColor}
                     textColor={textColor}
                     disabled={loading}
+                    suffix={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    }
                   />
                   <div className="text-right mt-1.5">
                     <button

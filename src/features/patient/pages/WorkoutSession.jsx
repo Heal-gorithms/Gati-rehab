@@ -21,7 +21,8 @@ import NavHeader from '../../../shared/components/NavHeader';
 import { useAuth } from '../../auth/context/AuthContext';
 import { saveSession } from '../services/sessionService';
 import { calculateFormQualityScore, trackRangeOfMotion } from '../utils/enhancedScoring';
-import { getVisualFeedbackStyle } from '../../ai/utils/realTimeFeedback';
+import { AVAILABLE_EXERCISES } from '../../ai/utils/secondaryExercises';
+import { getPrimaryAngle } from '../../ai/utils/angleCalculations';
 
 const WorkoutSession = () => {
   const navigate = useNavigate();
@@ -36,18 +37,14 @@ const WorkoutSession = () => {
   const [formQuality, setFormQuality] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [frameData, setFrameData] = useState([]);
+  const frameDataRef = useRef([]); // Use ref for high-frequency data to avoid re-renders
   const [realTimeFeedback, setRealTimeFeedback] = useState(null);
   const [isDevMode, setIsDevMode] = useState(location.state?.devMode || false);
 
-  const availableExercises = [
-    { id: 'knee-bends', name: 'Knee Bends' },
-    { id: 'leg-raises', name: 'Leg Raises' },
-    { id: 'hip-flexion', name: 'Hip Flexion' },
-    { id: 'shoulder-raises', name: 'Shoulder Raises' },
-    { id: 'elbow-flexion', name: 'Elbow Flexion' },
-    { id: 'standing-march', name: 'Standing March' }
-  ];
+  const availableExercises = Object.entries(AVAILABLE_EXERCISES).map(([id, data]) => ({
+    id,
+    name: data.name
+  }));
 
   const timerRef = useRef(null);
   const previousPhaseRef = useRef('start');
@@ -142,8 +139,8 @@ const WorkoutSession = () => {
   const handleEndSession = async () => {
     setSessionActive(false);
 
-    const finalQuality = calculateFormQualityScore(frameData, currentExercise);
-    const rom = trackRangeOfMotion(frameData, currentExercise);
+    const finalQuality = calculateFormQualityScore(frameDataRef.current, currentExercise);
+    const rom = trackRangeOfMotion(frameDataRef.current, currentExercise);
 
     const sessionData = {
       exerciseName: currentExercise,
@@ -171,8 +168,6 @@ const WorkoutSession = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const feedbackStyle = realTimeFeedback ? getVisualFeedbackStyle(realTimeFeedback.visualCue) : {};
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-white pb-28">
@@ -222,7 +217,7 @@ const WorkoutSession = () => {
                   onClick={() => {
                     setCurrentExercise(ex.id);
                     setRepCount(0);
-                    setFrameData([]);
+                    frameDataRef.current = [];
                   }}
                   className={`whitespace-nowrap px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all shrink-0 ${currentExercise === ex.id
                     ? 'bg-blue-600 text-white'
