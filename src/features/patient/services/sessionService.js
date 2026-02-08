@@ -5,6 +5,7 @@ import {
   collection,
   addDoc,
   doc,
+  getDoc,
   updateDoc,
   serverTimestamp,
   increment,
@@ -120,24 +121,46 @@ export const getPendingSessionsCount = () => {
 /**
  * Update patient statistics after session
  */
-// eslint-disable-next-line no-unused-vars
 const updatePatientStats = async (userId, sessionData) => {
   try {
     const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
     
-    // Increment completed sessions
+    if (!userSnap.exists()) return;
+
+    const userData = userSnap.data();
+    const lastActive = userData.lastActive?.toDate() || null;
+    const now = new Date();
+
+    let newStreak = userData.streak || 0;
+
+    if (!lastActive) {
+      newStreak = 1;
+    } else {
+      const diffTime = now - lastActive;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        // Active yesterday, increment streak
+        newStreak += 1;
+      } else if (diffDays > 1) {
+        // Missed a day or more, reset streak
+        newStreak = 1;
+      }
+      // If diffDays === 0, already active today, keep current streak
+    }
+
+    // Increment completed sessions and update streak
     await updateDoc(userRef, {
       completedSessions: increment(1),
       lastActive: serverTimestamp(),
+      streak: newStreak,
+      lastSessionQuality: sessionData.quality || 0
     });
     
-    // TODO: Calculate and update adherence rate
-    // This would require more complex logic based on scheduled vs completed sessions
-    
-    console.log('[SessionService] Patient stats updated');
+    console.log(`[SessionService] Patient stats updated. New streak: ${newStreak}`);
   } catch (error) {
     console.error('[SessionService] Stats update error:', error);
-    // Don't throw error - stats update is not critical
   }
 };
 
