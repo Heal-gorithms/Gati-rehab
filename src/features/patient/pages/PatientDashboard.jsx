@@ -56,6 +56,7 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [painModalOpen, setPainModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(true);
 
   const handleSettingsUpdate = async (data) => {
@@ -101,9 +102,7 @@ const PatientDashboard = () => {
       }
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [user]);
 
   if (loading) {
@@ -336,12 +335,17 @@ const PatientDashboard = () => {
                   onClick={() => setScheduleOpen(true)}
                 />
                 <ActionTile
+                  icon={<Plus className="w-5 h-5" />}
+                  label="Log Pain"
+                  color="rose"
+                  onClick={() => setPainModalOpen(true)}
+                />
+                <ActionTile
                   icon={<History className="w-5 h-5" />}
                   label="History"
                   color="indigo"
                   onClick={() => navigate('/history')}
                 />
-                <ActionTile icon={<FileText className="w-5 h-5" />} label="Reports" color="rose" />
                 <ActionTile icon={<TrendingUp className="w-5 h-5" />} label="Trends" color="emerald" />
               </div>
             </div>
@@ -422,7 +426,7 @@ const PatientDashboard = () => {
       <ScheduleModal
         isOpen={scheduleOpen}
         onClose={() => setScheduleOpen(false)}
-        user={{ uid: user.uid, name: userData?.name }}
+        user={{ uid: user?.uid, name: userData?.name }}
         doctorId={userData?.doctorId}
       />
     </div>

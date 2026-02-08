@@ -311,7 +311,7 @@ export const getFormQualityTrendData = async (doctorId, existingPatients = null)
  * Get ROM trend data for charts (last 4 weeks)
  * FIX: Accepts 'existingPatients' to avoid re-fetching (Fixes Point 2)
  */
-export const getROMTrendData = async (_doctorId, _existingPatients = null) => {
+export const getROMTrendData = async () => {
   try {
     // Even if ROM data is mocked, we accept the args for consistency
     const last4Weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];

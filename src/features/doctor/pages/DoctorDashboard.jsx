@@ -93,7 +93,7 @@ const DoctorDashboard = () => {
         const [adherence, quality, rom] = await Promise.all([
           getAdherenceTrendData(user.uid, updatedPatients),
           getFormQualityTrendData(user.uid, updatedPatients),
-          getROMTrendData(user.uid, updatedPatients),
+          getROMTrendData(),
         ]);
         setChartData({ adherenceTrend: adherence, formQualityTrend: quality, romTrend: rom });
       } catch (err) {

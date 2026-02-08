@@ -23,6 +23,7 @@ import { saveSession } from '../services/sessionService';
 import { calculateFormQualityScore, trackRangeOfMotion } from '../utils/enhancedScoring';
 import { AVAILABLE_EXERCISES } from '../../ai/utils/secondaryExercises';
 import { getPrimaryAngle } from '../../ai/utils/angleCalculations';
+import { logAction } from '../../../shared/utils/auditLogger';
 
 const WorkoutSession = () => {
   const navigate = useNavigate();

@@ -7,6 +7,7 @@ import {
   collection,
   query,
   where,
+  orderBy,
   limit,
   getDocs,
   onSnapshot,
@@ -199,7 +200,7 @@ export const getTrendData = async (patientId) => {
 };
 
 /**
- * Log pain data to Firestore
+ * Log comprehensive pain data
  */
 export const logPain = async (patientId, painData) => {
   try {
@@ -213,6 +214,48 @@ export const logPain = async (patientId, painData) => {
     return { id: docRef.id, success: true };
   } catch (error) {
     console.error('[PatientService] Log pain error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Log simple pain level
+ */
+export const logPainLevel = async (patientId, level, note = '') => {
+  try {
+    const painLogsRef = collection(db, 'pain_logs');
+    await addDoc(painLogsRef, {
+      patientId,
+      level: parseInt(level),
+      note,
+      timestamp: serverTimestamp()
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('[PatientService] Log pain level error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get pain history
+ */
+export const getPainHistory = async (patientId, limitCount = 7) => {
+  try {
+    const painLogsRef = collection(db, 'pain_logs');
+    const q = query(
+      painLogsRef,
+      where('patientId', '==', patientId),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('[PatientService] Get pain history error:', error);
     throw error;
   }
 };
