@@ -49,6 +49,7 @@ const DoctorDashboard = () => {
   };
 
   const [patients, setPatients] = useState([]);
+  const [, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAdherence, setFilterAdherence] = useState('all');
   const [stats, setStats] = useState({

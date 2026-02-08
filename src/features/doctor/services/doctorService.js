@@ -7,7 +7,7 @@ import {
   getDocs,
   onSnapshot,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 
@@ -244,10 +244,12 @@ const getProgressLevel = (adherenceRate) => {
  * Get adherence trend data for charts (last 7 days)
  * FIX: Accepts 'existingPatients' to avoid re-fetching (Fixes Point 2)
  */
-export const getAdherenceTrendData = async (doctorId, existingPatients = null) => {
+export const getAdherenceTrendData = async (doctorId, patients = null) => {
   try {
     // FIX: Use passed patients if available, else fetch
-    const patients = existingPatients || await getDoctorPatients(doctorId);
+    if (!patients) {
+      patients = await getDoctorPatients(doctorId);
+    }
 
     if (patients.length === 0) {
       return [];
@@ -285,9 +287,11 @@ export const getAdherenceTrendData = async (doctorId, existingPatients = null) =
  * Get form quality trend data for charts (last 7 days)
  * FIX: Accepts 'existingPatients' to avoid re-fetching (Fixes Point 2)
  */
-export const getFormQualityTrendData = async (doctorId, existingPatients = null) => {
+export const getFormQualityTrendData = async (doctorId, patients = null) => {
   try {
-    const patients = existingPatients || await getDoctorPatients(doctorId);
+    if (!patients) {
+      patients = await getDoctorPatients(doctorId);
+    }
     if (patients.length === 0) return [];
 
     const last7Days = [];
@@ -311,7 +315,7 @@ export const getFormQualityTrendData = async (doctorId, existingPatients = null)
  * Get ROM trend data for charts (last 4 weeks)
  * FIX: Accepts 'existingPatients' to avoid re-fetching (Fixes Point 2)
  */
-export const getROMTrendData = async () => {
+export const getROMTrendData = async (doctorId) => {
   try {
     // Even if ROM data is mocked, we accept the args for consistency
     const last4Weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];

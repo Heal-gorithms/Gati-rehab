@@ -97,7 +97,7 @@ const LandingPage = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { mode: 'signup' } })}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-lg shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1"
             >
               Get Started Free
@@ -224,7 +224,7 @@ const LandingPage = () => {
                   Join thousands of patients already improving their recovery with Gati.
                 </p>
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/login', { state: { mode: 'signup' } })}
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
                 >
                   Sign Up Now - It's Free
