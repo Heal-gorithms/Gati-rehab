@@ -46,6 +46,7 @@ import {
   getFormQualityTrendData,
   getROMTrendData,
 } from '../services/doctorService';
+import { generateDoctorInsights } from '../utils/insightGenerator';
 import { useAuth } from '../../auth/context/AuthContext';
 import { updateUserProfile } from '../../auth/services/authService';
 
@@ -86,6 +87,8 @@ const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
   const [reportsOpen, setReportsOpen] = useState(false);
+  const [aiInsights, setAiInsights] = useState([]);
+  const [timeframe, setTimeframe] = useState('weekly');
 
   const handleActionClick = (id) => {
     if (id === 'add-patient') {
@@ -110,6 +113,7 @@ const DoctorDashboard = () => {
     // 1. Listen for patient updates
     const unsubscribe = subscribeToDoctorPatients(user.uid, async (updatedPatients) => {
       setPatients(updatedPatients);
+      setAiInsights(generateDoctorInsights(updatedPatients));
 
       // 2. Pass the fresh data to charts immediately (Fixes Point 2 & 3)
       // This prevents re-fetching the patients inside the chart functions
@@ -270,17 +274,27 @@ const DoctorDashboard = () => {
                   <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Health & Recovery Trends</p>
                 </div>
                 <div className="flex p-1.5 bg-slate-100 rounded-2xl w-full sm:w-auto">
-                  <button className="px-4 py-2 text-sm font-black bg-white shadow-lg rounded-xl text-blue-600 flex-1 sm:flex-none">Weekly</button>
-                  <button className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 flex-1 sm:flex-none">Monthly</button>
+                  <button
+                    onClick={() => setTimeframe('weekly')}
+                    className={`px-4 py-2 text-sm font-black rounded-xl flex-1 sm:flex-none transition-all ${timeframe === 'weekly' ? 'bg-white shadow-lg text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    onClick={() => setTimeframe('monthly')}
+                    className={`px-4 py-2 text-sm font-black rounded-xl flex-1 sm:flex-none transition-all ${timeframe === 'monthly' ? 'bg-white shadow-lg text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    Monthly
+                  </button>
                 </div>
               </div>
               <Suspense fallback={<div className="h-64 flex items-center justify-center bg-slate-50 rounded-2xl animate-pulse text-slate-400 font-bold uppercase text-xs tracking-widest">Loading Analytics...</div>}>
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-4">
-                    <AdherenceTrendChart data={chartData.adherenceTrend} loading={chartsLoading} />
+                    <AdherenceTrendChart data={chartData.adherenceTrend} loading={chartsLoading} timeframe={timeframe} />
                   </div>
                   <div className="space-y-4">
-                    <FormQualityChart data={chartData.formQualityTrend} loading={chartsLoading} />
+                    <FormQualityChart data={chartData.formQualityTrend} loading={chartsLoading} timeframe={timeframe} />
                   </div>
                 </div>
               </Suspense>
@@ -288,7 +302,7 @@ const DoctorDashboard = () => {
 
             <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-50">
               <Suspense fallback={<div className="h-64 flex items-center justify-center bg-slate-50 rounded-2xl animate-pulse text-slate-400 font-bold uppercase text-xs tracking-widest">Loading Biometrics...</div>}>
-                <ROMTrendChart data={chartData.romTrend} loading={chartsLoading} />
+                <ROMTrendChart data={chartData.romTrend} loading={chartsLoading} timeframe={timeframe} />
               </Suspense>
             </div>
 
@@ -358,20 +372,18 @@ const DoctorDashboard = () => {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group/item">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest">Adherence Alert</p>
-                      <ChevronRight className="w-4 h-4 text-white/20 group-hover/item:translate-x-1 transition-transform" />
+                  {aiInsights.map((insight) => (
+                    <div key={insight.id} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group/item">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-[10px] ${insight.color === 'emerald' ? 'text-emerald-400' : insight.color === 'blue' ? 'text-blue-400' : 'text-indigo-400'} font-black uppercase tracking-widest`}>{insight.title}</p>
+                        <ChevronRight className="w-4 h-4 text-white/20 group-hover/item:translate-x-1 transition-transform" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-200">{insight.message}</p>
                     </div>
-                    <p className="text-sm font-bold text-slate-200">3 patients haven't completed their routine today. Send a neural nudge?</p>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer group/item">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Recovery Peak</p>
-                      <ChevronRight className="w-4 h-4 text-white/20 group-hover/item:translate-x-1 transition-transform" />
-                    </div>
-                    <p className="text-sm font-bold text-slate-200">Rajesh Kumar achieved a <span className="text-emerald-400">5° increase</span> in knee ROM today! 🎉</p>
-                  </div>
+                  ))}
+                  {aiInsights.length === 0 && (
+                    <p className="text-slate-500 text-xs font-bold italic text-center py-4">Analyzing clinical data...</p>
+                  )}
                 </div>
                 <button className="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black transition-all shadow-lg shadow-blue-600/20 transform active:scale-95">
                   View Full Analysis
@@ -441,6 +453,10 @@ const DoctorDashboard = () => {
         onClose={() => setAppointmentOpen(false)}
         doctorId={user?.uid}
         patients={patients}
+        onJoinCall={(room) => {
+          setSelectedRoom(room);
+          setVideoOpen(true);
+        }}
       />
 
       <VideoConsultationModal

@@ -38,6 +38,7 @@ export const calculateFormQualityScore = (frameData, exerciseType) => {
 
   return {
     overallScore: Math.max(0, Math.min(100, overallScore)),
+    grade: getGradeFromScore(overallScore),
     angleAccuracy: Math.round(angleAccuracy),
     consistency: Math.round(consistency),
     symmetry: Math.round(symmetry),

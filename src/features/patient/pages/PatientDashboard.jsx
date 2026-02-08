@@ -79,6 +79,7 @@ const PatientDashboard = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState('');
   const [planOpen, setPlanOpen] = useState(false);
   const [trendsOpen, setTrendsOpen] = useState(false);
 
@@ -473,13 +474,16 @@ const PatientDashboard = () => {
         patientName={userData?.name}
         doctorId={userData?.doctorId}
         doctorName={userData?.doctorName}
-        onJoinCall={() => setVideoOpen(true)}
+        onJoinCall={(room) => {
+          setSelectedRoom(room);
+          setVideoOpen(true);
+        }}
       />
 
       <VideoConsultationModal
         isOpen={videoOpen}
         onClose={() => setVideoOpen(false)}
-        roomName={`GatiRehab_${user?.uid?.substring(0, 8)}`}
+        roomName={selectedRoom || `GatiRehab_${user?.uid?.substring(0, 8)}`}
       />
 
       <TrendsModal

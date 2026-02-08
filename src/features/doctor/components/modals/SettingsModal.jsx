@@ -46,6 +46,7 @@ const SettingsModal = ({ isOpen, onClose, doctorProfile, onSave }) => {
     if (doctorProfile) {
       setFormData((prev) => ({
         ...prev,
+        ...doctorProfile,
         name: doctorProfile.name || '',
         email: doctorProfile.email || '',
         specialization: doctorProfile.specialization || '',
@@ -64,7 +65,6 @@ const SettingsModal = ({ isOpen, onClose, doctorProfile, onSave }) => {
     setIsSaving(true);
     setSaveSuccess(false);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       if (onSave) await onSave(formData);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

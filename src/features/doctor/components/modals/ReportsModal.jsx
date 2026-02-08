@@ -10,6 +10,20 @@ const ReportsModal = ({ isOpen, onClose, patients }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedReport, setGeneratedReport] = useState(null);
 
+    const handleDownload = () => {
+        if (!generatedReport) return;
+        const blob = new Blob([generatedReport], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const patient = patients.find(p => p.id === selectedPatientId);
+        a.download = `Gati_Report_${patient?.name || 'Patient'}_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const reportTypes = [
         { id: 'summary', label: 'Clinical Summary', icon: FileText, desc: 'AI-generated health status' },
         { id: 'adherence', label: 'Adherence Audit', icon: Activity, desc: 'Detailed completion logs' },
@@ -158,7 +172,11 @@ const ReportsModal = ({ isOpen, onClose, patients }) => {
                                         <FileText className="w-5 h-5 text-emerald-600" />
                                         <span className="font-black text-slate-900 uppercase text-xs tracking-widest">Clinical Audit Document</span>
                                     </div>
-                                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
+                                    <button
+                                        onClick={handleDownload}
+                                        className="p-2 hover:bg-slate-100 rounded-lg text-emerald-600 transition-colors"
+                                        title="Download Report"
+                                    >
                                         <Download className="w-4 h-4" />
                                     </button>
                                 </div>

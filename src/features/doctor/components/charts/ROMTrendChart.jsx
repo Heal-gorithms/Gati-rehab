@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-const ROMTrendChart = ({ data, loading = false }) => {
+const ROMTrendChart = ({ data, loading = false, timeframe = 'weekly' }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -57,7 +57,9 @@ const ROMTrendChart = ({ data, loading = false }) => {
           <BarChart3 className="w-5 h-5 text-purple-600" />
           <h3 className="text-lg font-semibold text-gray-900">Range of Motion Progress</h3>
         </div>
-        <span className="text-xs text-gray-500 uppercase tracking-wide">Last 4 Weeks</span>
+        <span className="text-xs text-gray-500 uppercase tracking-wide">
+          {timeframe === 'weekly' ? 'Last 4 Weeks' : 'Year to Date'}
+        </span>
       </div>
 
       <ResponsiveContainer width="100%" height={280}>

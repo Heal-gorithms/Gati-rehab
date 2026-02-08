@@ -185,6 +185,9 @@ const analyzeJointAngle = (currentAngle, range, joint) => {
   };
 };
 
+// Single shared AudioContext to prevent "too many AudioContexts" errors
+let sharedAudioContext = null;
+
 /**
  * Generate audio cue based on feedback type
  * @param {string} cueType - Type of cue ('success', 'warning', 'error', 'info')
@@ -192,13 +195,21 @@ const analyzeJointAngle = (currentAngle, range, joint) => {
  */
 export const playAudioCue = async (cueType) => {
   try {
-    // Create audio context for generating tones
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    // Create audio context for generating tones if it doesn't exist
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Resume if suspended (common in browsers until user interaction)
+    if (sharedAudioContext.state === 'suspended') {
+      await sharedAudioContext.resume();
+    }
+
+    const oscillator = sharedAudioContext.createOscillator();
+    const gainNode = sharedAudioContext.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    gainNode.connect(sharedAudioContext.destination);
 
     // Define audio parameters based on cue type
     const audioParams = {
@@ -211,14 +222,14 @@ export const playAudioCue = async (cueType) => {
     const params = audioParams[cueType] || audioParams.info;
 
     oscillator.frequency.value = params.frequency;
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.3, sharedAudioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(
       0.01,
-      audioContext.currentTime + params.duration
+      sharedAudioContext.currentTime + params.duration
     );
 
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + params.duration);
+    oscillator.start(sharedAudioContext.currentTime);
+    oscillator.stop(sharedAudioContext.currentTime + params.duration);
   } catch (error) {
     console.error('[realTimeFeedback] Error playing audio cue:', error);
   }

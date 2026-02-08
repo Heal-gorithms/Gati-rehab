@@ -12,7 +12,19 @@ import {
   sendPasswordResetEmail,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  onSnapshot,
+  collection,
+  query,
+  where,
+  getDocs,
+  deleteDoc
+} from 'firebase/firestore';
 import { auth, db } from '../../../lib/firebase/config';
 import { logAction } from '../../../shared/services/auditLogger';
 
@@ -311,9 +323,50 @@ export const updateUserProfile = async (uid, data) => {
  */
 const createUserDocument = async (uid, data) => {
   try {
-    const userRef = doc(db, 'users', uid);
-    await setDoc(userRef, data);
-    console.log('[AuthService] User document created:', uid);
+    // Check if a placeholder document exists for this email
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', data.email));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const placeholderDoc = querySnapshot.docs[0];
+      const placeholderData = placeholderDoc.data();
+
+      // If the placeholder ID is different from the UID, move the data
+      if (placeholderDoc.id !== uid) {
+        await setDoc(doc(db, 'users', uid), {
+          ...placeholderData,
+          ...data,
+          updatedAt: serverTimestamp()
+        });
+
+        // Update doctor_patients link if doctorId exists
+        if (placeholderData.doctorId) {
+          try {
+            await setDoc(doc(db, 'doctor_patients', placeholderData.doctorId, 'patients', uid), {
+              assignedAt: placeholderData.createdAt || serverTimestamp(),
+              active: true
+            });
+            await deleteDoc(doc(db, 'doctor_patients', placeholderData.doctorId, 'patients', placeholderDoc.id));
+          } catch (err) {
+            console.warn('[AuthService] Could not update doctor_patients link:', err);
+          }
+        }
+
+        // Delete the placeholder
+        try {
+          await deleteDoc(doc(db, 'users', placeholderDoc.id));
+        } catch (e) {
+          console.warn('[AuthService] Could not delete placeholder doc:', e);
+        }
+      } else {
+        await setDoc(doc(db, 'users', uid), data, { merge: true });
+      }
+    } else {
+      const userRef = doc(db, 'users', uid);
+      await setDoc(userRef, data);
+    }
+    console.log('[AuthService] User document created/updated:', uid);
   } catch (error) {
     console.error('[AuthService] Create user document error:', error);
     throw error;

@@ -1,8 +1,11 @@
 
-import { User, TrendingUp, TrendingDown, AlertCircle, AlertTriangle, ChevronRight, Activity, Calendar } from 'lucide-react';
+import { User, TrendingUp, TrendingDown, AlertCircle, AlertTriangle, ChevronRight, Activity, Calendar, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { deletePatientFromDoctor } from '../services/doctorService';
+import { useAuth } from '../../auth/context/AuthContext';
 
 const PatientCard = ({ patient, viewMode = 'grid' }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const getAdherenceColor = (rate) => {
@@ -12,6 +15,18 @@ const PatientCard = ({ patient, viewMode = 'grid' }) => {
   };
 
   const isHighRisk = patient.adherenceRate < 60;
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to disconnect ${patient.name}?`)) {
+      try {
+        await deletePatientFromDoctor(user.uid, patient.id);
+      } catch (error) {
+        console.error('Failed to delete patient:', error);
+        alert('Failed to disconnect patient.');
+      }
+    }
+  };
 
   if (viewMode === 'list') {
     return (
@@ -30,6 +45,13 @@ const PatientCard = ({ patient, viewMode = 'grid' }) => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+          <button
+            onClick={handleDelete}
+            className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+            title="Disconnect Patient"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
           <div className="text-center sm:text-right">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Adherence</p>
             <div className={`px-3 py-1.5 rounded-full text-xs font-black border ${getAdherenceColor(patient.adherenceRate)} min-w-[60px]`}>
@@ -67,7 +89,16 @@ const PatientCard = ({ patient, viewMode = 'grid' }) => {
           <User className={`w-8 h-8 sm:w-10 sm:h-10 ${isHighRisk ? 'text-rose-400' : 'text-slate-400'}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 leading-tight">{patient.name}</h3>
+          <div className="flex items-start justify-between">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 leading-tight">{patient.name}</h3>
+            <button
+              onClick={handleDelete}
+              className="p-1 text-slate-300 hover:text-rose-500 transition-colors"
+              title="Disconnect Patient"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-tighter">{patient.condition}</p>
         </div>
       </div>

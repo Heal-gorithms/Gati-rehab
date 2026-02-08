@@ -5,49 +5,45 @@ import { getTrendData } from '../../services/patientService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 const TrendsModal = ({ isOpen, onClose, patientId }) => {
-    const [loading, setLoading] = useState(true);
     const [trends, setTrends] = useState({ romData: [], qualityData: [] });
 
     useEffect(() => {
+        const fetchTrends = async () => {
+            try {
+                const data = await getTrendData(patientId);
+                // Fallback dummy data if nothing exists yet to show the UI
+                const mockRom = [
+                    { day: 'Mon', value: 45 },
+                    { day: 'Tue', value: 52 },
+                    { day: 'Wed', value: 48 },
+                    { day: 'Thu', value: 61 },
+                    { day: 'Fri', value: 58 },
+                    { day: 'Sat', value: 65 },
+                    { day: 'Sun', value: 72 },
+                ];
+                const mockQuality = [
+                    { day: 'Mon', value: 80 },
+                    { day: 'Tue', value: 85 },
+                    { day: 'Wed', value: 82 },
+                    { day: 'Thu', value: 90 },
+                    { day: 'Fri', value: 88 },
+                    { day: 'Sat', value: 92 },
+                    { day: 'Sun', value: 95 },
+                ];
+
+                setTrends({
+                    romData: data.romData.length > 0 ? data.romData : mockRom,
+                    qualityData: data.qualityData.length > 0 ? data.qualityData : mockQuality
+                });
+            } catch (error) {
+                console.error("Trends Fetch Error:", error);
+            }
+        };
+
         if (isOpen && patientId) {
             fetchTrends();
         }
     }, [isOpen, patientId]);
-
-    const fetchTrends = async () => {
-        setLoading(true);
-        try {
-            const data = await getTrendData(patientId);
-            // Fallback dummy data if nothing exists yet to show the UI
-            const mockRom = [
-                { day: 'Mon', value: 45 },
-                { day: 'Tue', value: 52 },
-                { day: 'Wed', value: 48 },
-                { day: 'Thu', value: 61 },
-                { day: 'Fri', value: 58 },
-                { day: 'Sat', value: 65 },
-                { day: 'Sun', value: 72 },
-            ];
-            const mockQuality = [
-                { day: 'Mon', value: 80 },
-                { day: 'Tue', value: 85 },
-                { day: 'Wed', value: 82 },
-                { day: 'Thu', value: 90 },
-                { day: 'Fri', value: 88 },
-                { day: 'Sat', value: 92 },
-                { day: 'Sun', value: 95 },
-            ];
-
-            setTrends({
-                romData: data.romData.length > 0 ? data.romData : mockRom,
-                qualityData: data.qualityData.length > 0 ? data.qualityData : mockQuality
-            });
-        } catch (error) {
-            console.error("Trends Fetch Error:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     if (!isOpen) return null;
 
