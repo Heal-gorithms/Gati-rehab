@@ -53,35 +53,15 @@ const WorkoutSession = () => {
   const previousPhaseRef = useRef('start');
   const angleHistoryRef = useRef([]);
 
-  // Handle pose detection from AIEngine
-  const handlePoseDetected = useCallback((poseData) => {
-    if (!sessionActive) return;
-
-    const { angles, feedback: rtFeedback, timestamp } = poseData;
-
-    // Store frame data for later analysis (limited to prevent memory issues)
-    setFrameData(prev => {
-      const newData = [...prev, { angles, timestamp, feedback: rtFeedback }];
-      return newData.slice(-1000); // Keep last 1000 frames for scoring
-    });
-
-    // Update current angle (knee angle for knee-bends)
-    const primaryAngle = angles.leftKnee || angles.rightKnee || 0;
-    setCurrentAngle(Math.round(primaryAngle));
-    angleHistoryRef.current.push(primaryAngle);
-
-    // Update feedback display
-    if (rtFeedback) {
-      setFeedback(rtFeedback.message);
-      setRealTimeFeedback(rtFeedback);
+  const updateQualityScore = useCallback(() => {
+    if (frameData.length > 0) {
+      const quality = calculateFormQualityScore(frameData, currentExercise);
+      setFormQuality(quality.overallScore);
     }
-
-    // Detect rep completion
-    detectRepCompletion(angles);
-  }, [sessionActive]);
+  }, [frameData, currentExercise]);
 
   // Detect when a rep is completed
-  const detectRepCompletion = (angles) => {
+  const detectRepCompletion = useCallback((angles) => {
     // Dynamic joint selection based on exercise
     let primaryAngle = 180;
     let thresholdLow = 100;
@@ -107,14 +87,34 @@ const WorkoutSession = () => {
       previousPhaseRef.current = 'high';
       updateQualityScore();
     }
-  };
+  }, [currentExercise, updateQualityScore]);
 
-  const updateQualityScore = () => {
-    if (frameData.length > 0) {
-      const quality = calculateFormQualityScore(frameData, currentExercise);
-      setFormQuality(quality.overallScore);
+  // Handle pose detection from AIEngine
+  const handlePoseDetected = useCallback((poseData) => {
+    if (!sessionActive) return;
+
+    const { angles, feedback: rtFeedback, timestamp } = poseData;
+
+    // Store frame data for later analysis (limited to prevent memory issues)
+    setFrameData(prev => {
+      const newData = [...prev, { angles, timestamp, feedback: rtFeedback }];
+      return newData.slice(-1000); // Keep last 1000 frames for scoring
+    });
+
+    // Update current angle (knee angle for knee-bends)
+    const primaryAngle = angles.leftKnee || angles.rightKnee || 0;
+    setCurrentAngle(Math.round(primaryAngle));
+    angleHistoryRef.current.push(primaryAngle);
+
+    // Update feedback display
+    if (rtFeedback) {
+      setFeedback(rtFeedback.message);
+      setRealTimeFeedback(rtFeedback);
     }
-  };
+
+    // Detect rep completion
+    detectRepCompletion(angles);
+  }, [sessionActive, detectRepCompletion]);
 
   // Timer effect
   useEffect(() => {

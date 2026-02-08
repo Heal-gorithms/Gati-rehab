@@ -49,7 +49,7 @@ const DoctorDashboard = () => {
   };
 
   const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAdherence, setFilterAdherence] = useState('all');
   const [stats, setStats] = useState({
@@ -95,7 +95,7 @@ const DoctorDashboard = () => {
         const [adherence, quality, rom] = await Promise.all([
           getAdherenceTrendData(user.uid, updatedPatients),
           getFormQualityTrendData(user.uid, updatedPatients),
-          getROMTrendData(user.uid, updatedPatients),
+          getROMTrendData(user.uid),
         ]);
         setChartData({ adherenceTrend: adherence, formQualityTrend: quality, romTrend: rom });
       } catch (err) {
