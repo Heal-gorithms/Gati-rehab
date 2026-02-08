@@ -28,7 +28,7 @@ import { logAction } from '../../../shared/utils/auditLogger';
 const WorkoutSession = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
 
   const [sessionActive, setSessionActive] = useState(false);
   const [currentExercise, setCurrentExercise] = useState(location.state?.exerciseId || 'knee-bends');
@@ -61,30 +61,42 @@ const WorkoutSession = () => {
 
   // Detect when a rep is completed
   const detectRepCompletion = useCallback((angles) => {
-    // Dynamic joint selection based on exercise
-    let primaryAngle = 180;
-    let thresholdLow = 100;
-    let thresholdHigh = 155;
+    const primaryAngle = getPrimaryAngle(angles, currentExercise);
 
-    if (currentExercise.includes('knee') || currentExercise.includes('squat')) {
-      primaryAngle = Math.min(angles.leftKnee || 180, angles.rightKnee || 180);
-    } else if (currentExercise.includes('hip') || currentExercise.includes('march') || currentExercise.includes('leg')) {
-      primaryAngle = Math.min(angles.leftHip || 180, angles.rightHip || 180);
-      thresholdLow = 110;
-      thresholdHigh = 160;
-    } else if (currentExercise.includes('shoulder')) {
-      primaryAngle = Math.max(angles.leftShoulder || 0, angles.rightShoulder || 0);
-      thresholdLow = 140; // Extension for status
-      thresholdHigh = 60; // Return
-    }
+    // Exercise patterns:
+    // Type A (Decreasing): Start ~180, Goal < 110 (e.g. Knee Bends, Squats, Hip Flexion)
+    // Type B (Increasing): Start ~0, Goal > 120 (e.g. Shoulder Raises)
 
-    // Generic phase detection (Flexion -> Extension toggle)
-    if (primaryAngle < thresholdLow && previousPhaseRef.current !== 'low') {
-      previousPhaseRef.current = 'low';
-    } else if (primaryAngle > thresholdHigh && previousPhaseRef.current === 'low') {
-      setRepCount(prev => prev + 1);
-      previousPhaseRef.current = 'high';
-      updateQualityScore();
+    const isIncreasingExercise = currentExercise.includes('shoulder') || currentExercise.includes('arm');
+
+    if (isIncreasingExercise) {
+      // Type B: Increasing Angle
+      const thresholdHigh = 130; // Peak
+      const thresholdLow = 50;   // Return
+
+      if (primaryAngle > thresholdHigh && previousPhaseRef.current !== 'peak') {
+        previousPhaseRef.current = 'peak';
+      } else if (primaryAngle < thresholdLow && previousPhaseRef.current === 'peak') {
+        setRepCount(prev => prev + 1);
+        previousPhaseRef.current = 'return';
+        updateQualityScore();
+      }
+    } else {
+      // Type A: Decreasing Angle
+      let thresholdLow = 110;  // Peak (max flexion)
+      let thresholdHigh = 155; // Return (extension)
+
+      if (currentExercise.includes('hip') || currentExercise.includes('march')) {
+        thresholdLow = 120;
+      }
+
+      if (primaryAngle < thresholdLow && previousPhaseRef.current !== 'peak') {
+        previousPhaseRef.current = 'peak';
+      } else if (primaryAngle > thresholdHigh && previousPhaseRef.current === 'peak') {
+        setRepCount(prev => prev + 1);
+        previousPhaseRef.current = 'return';
+        updateQualityScore();
+      }
     }
   }, [currentExercise, updateQualityScore]);
 
@@ -267,6 +279,10 @@ const WorkoutSession = () => {
                   onPoseDetected={handlePoseDetected}
                   exerciseType={currentExercise}
                   repCount={repCount}
+                  settings={{
+                    audioCues: userData?.audioCues,
+                    motionFeedback: userData?.motionFeedback
+                  }}
                 />
               </div>
 

@@ -62,8 +62,8 @@ export const generateRealTimeFeedback = (
 ) => {
   if (!currentAngles || !IDEAL_ANGLES[exerciseType]) {
     return {
-      message: 'Unable to detect pose',
-      severity: 'error',
+      message: 'Position yourself clearly in frame',
+      severity: 'warning',
       audioCue: null,
       visualCue: null,
       corrections: [],
@@ -222,6 +222,34 @@ export const playAudioCue = async (cueType) => {
   } catch (error) {
     console.error('[realTimeFeedback] Error playing audio cue:', error);
   }
+};
+
+/**
+ * Provide voice feedback using Web Speech API
+ * @param {string} text - The message to speak
+ */
+export const speakFeedback = (text) => {
+  if (!('speechSynthesis' in window)) return;
+
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 1.1;
+  utterance.pitch = 1.0;
+  utterance.volume = 0.8;
+
+  // Find a clear female voice if possible
+  const voices = window.speechSynthesis.getVoices();
+  const selectedVoice = voices.find(v =>
+    v.name.includes('Female') || v.name.includes('Google UK English Female')
+  ) || voices[0];
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
 };
 
 /**

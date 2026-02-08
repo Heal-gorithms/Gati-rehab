@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, Video, VideoOff, AlertCircle } from 'lucide-react';
 import { calculateAngles } from '../utils/angleCalculations';
-import { generateRealTimeFeedback, playAudioCue } from '../utils/realTimeFeedback';
+import { generateRealTimeFeedback, playAudioCue, speakFeedback } from '../utils/realTimeFeedback';
 
 // Separate FPS counter component to minimize re-renders
 const FPSDisplay = memo(({ fps }) => (
@@ -15,7 +15,7 @@ const FPSDisplay = memo(({ fps }) => (
   </span>
 ));
 
-const AIEngine = memo(({ onPoseDetected, exerciseType, onFeedbackUpdate, repCount }) => {
+const AIEngine = memo(({ onPoseDetected, exerciseType, onFeedbackUpdate, repCount, settings = {} }) => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
@@ -28,6 +28,10 @@ const AIEngine = memo(({ onPoseDetected, exerciseType, onFeedbackUpdate, repCoun
   const lastTimestampRef = useRef(0);
   const frameCountRef = useRef(0);
   const previousAnglesRef = useRef({});
+  const lastFeedbackTimeRef = useRef(0);
+  const lastFeedbackMessageRef = useRef('');
+  const lastOptimalTimeRef = useRef(Date.now());
+  const watchdogTriggeredRef = useRef(false);
 
   // Use refs for callbacks to avoid re-triggering the effect loop
   const onPoseDetectedRef = useRef(onPoseDetected);
@@ -138,8 +142,41 @@ const AIEngine = memo(({ onPoseDetected, exerciseType, onFeedbackUpdate, repCoun
               previousAngles: previousAnglesRef.current,
             });
 
-            if (feedback.audioCue && feedback.severity === 'error') {
-              playAudioCue(feedback.audioCue);
+            // Handle Voice and Audio Feedback
+            const now = Date.now();
+            if (feedback.severity !== 'success') {
+              // Trigger watchdog if in non-optimal position for > 4 seconds
+              if (now - lastOptimalTimeRef.current > 4000) {
+                if (!watchdogTriggeredRef.current || now - lastFeedbackTimeRef.current > 6000) {
+                  if (settings.audioCues !== false) {
+                    speakFeedback(`Correction needed: ${feedback.message}`);
+                    playAudioCue('error');
+                  }
+                  lastFeedbackTimeRef.current = now;
+                  watchdogTriggeredRef.current = true;
+                }
+              } else {
+                // Regular feedback beeps/speech (throttled)
+                if (now - lastFeedbackTimeRef.current > 3000 && feedback.message !== lastFeedbackMessageRef.current) {
+                  if (feedback.severity === 'error') {
+                    if (settings.audioCues !== false) {
+                      speakFeedback(feedback.message);
+                      playAudioCue('warning');
+                    }
+                  }
+                  lastFeedbackTimeRef.current = now;
+                  lastFeedbackMessageRef.current = feedback.message;
+                }
+              }
+            } else {
+              // In optimal position
+              lastOptimalTimeRef.current = now;
+              if (watchdogTriggeredRef.current) {
+                if (settings.audioCues !== false) {
+                  speakFeedback("Great adjustment! Form is perfect now.");
+                }
+                watchdogTriggeredRef.current = false;
+              }
             }
 
             if (onPoseDetectedRef.current) {
@@ -207,32 +244,34 @@ const AIEngine = memo(({ onPoseDetected, exerciseType, onFeedbackUpdate, repCoun
     ];
 
     // Draw connections - Batched stroke for performance
-    ctx.strokeStyle = '#00ff00';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    connections.forEach(([start, end]) => {
-      const p1 = keypoints[start];
-      const p2 = keypoints[end];
+    if (settings.motionFeedback !== false) {
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      connections.forEach(([start, end]) => {
+        const p1 = keypoints[start];
+        const p2 = keypoints[end];
 
-      if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
-        ctx.moveTo(p1.x * width, p1.y * height);
-        ctx.lineTo(p2.x * width, p2.y * height);
-      }
-    });
-    ctx.stroke();
+        if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
+          ctx.moveTo(p1.x * width, p1.y * height);
+          ctx.lineTo(p2.x * width, p2.y * height);
+        }
+      });
+      ctx.stroke();
 
-    // Draw keypoints - Batched fill for performance
-    ctx.fillStyle = '#00ff00';
-    ctx.beginPath();
-    keypoints.forEach((keypoint) => {
-      if (keypoint.visibility > 0.5) {
-        const x = keypoint.x * width;
-        const y = keypoint.y * height;
-        ctx.moveTo(x + 5, y);
-        ctx.arc(x, y, 5, 0, 2 * Math.PI);
-      }
-    });
-    ctx.fill();
+      // Draw keypoints - Batched fill for performance
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      keypoints.forEach((keypoint) => {
+        if (keypoint.visibility > 0.5) {
+          const x = keypoint.x * width;
+          const y = keypoint.y * height;
+          ctx.moveTo(x + 5, y);
+          ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        }
+      });
+      ctx.fill();
+    }
 
     // Draw visibility indicators separately to avoid fillStyle switching in loop
     ctx.fillStyle = '#ffffff';
