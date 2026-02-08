@@ -21,7 +21,8 @@ import {
   Star,
   ShieldCheck,
   MessageSquare,
-  Terminal
+  Terminal,
+  History
 } from 'lucide-react';
 import NavHeader from '../../../shared/components/NavHeader';
 import SessionReport from '../components/SessionReport';
@@ -150,12 +151,15 @@ const PatientDashboard = () => {
               <Terminal className="w-4 h-4 text-blue-400" />
               <span className="text-xs uppercase tracking-widest">Neural Lab</span>
             </button>
-            <button 
+            <button
               className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-400 hover:text-blue-600 transition-all shadow-lg active:scale-90 relative"
               aria-label="View notifications"
+              onClick={() => setHasNotifications(false)}
             >
               <Bell className="w-5 h-5 transition-transform" />
-              <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm"></span>
+              {hasNotifications && (
+                <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm animate-pulse"></span>
+              )}
             </button>
           </div>
         </div>
@@ -191,7 +195,8 @@ const PatientDashboard = () => {
                       </div>
                       <span className="text-base sm:text-lg">Resume Program</span>
                     </button>
-                    <button 
+                    <button
+                      onClick={() => setPlanOpen(true)}
                       className="px-8 py-4.5 sm:py-5 rounded-2xl sm:rounded-[2rem] font-black bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-xl text-sm sm:text-base"
                       aria-label="View treatment plan overview"
                     >
@@ -290,7 +295,10 @@ const PatientDashboard = () => {
 
           {/* Right Sidebar */}
           <div className="xl:col-span-4 space-y-10">
-            {/* Quick Progress Summary */}
+            {/* Pain Tracker Integration */}
+            <PainTracker />
+
+            {/* Daily Roadmap */}
             <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/50 border border-slate-50 overflow-hidden relative group">
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-6 sm:mb-8">Daily Roadmap</h3>
@@ -310,7 +318,11 @@ const PatientDashboard = () => {
                   </div>
 
                   {todayRoutine.map((ex, idx) => (
-                    <div key={idx} className="flex items-center gap-5 p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-xl hover:border-blue-100 transition-all group/item">
+                    <div
+                      key={idx}
+                      onClick={() => navigate('/workout', { state: { exerciseIndex: idx } })}
+                      className="flex items-center gap-5 p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-xl hover:border-blue-100 transition-all group/item cursor-pointer"
+                    >
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-all group-hover/item:scale-110 ${ex.completed ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400'}`}>
                         {ex.completed ? <CheckCircle className="w-7 h-7" /> : <Play className="w-5 h-5 ml-1" />}
                       </div>
@@ -331,7 +343,7 @@ const PatientDashboard = () => {
               </div>
             </div>
 
-            {/* Quick Actions - Higher Priority on Mobile */}
+            {/* Quick Actions */}
             <div className="bg-white rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/40 border border-slate-50">
               <div className="mb-6">
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-none mb-2 text-center md:text-left">Clinical Tools</h3>
@@ -418,9 +430,9 @@ const PatientDashboard = () => {
         </div>
 
         <div className="mt-16 mb-4 text-center">
-           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">
-             Measurements are approximate and intended for rehabilitation guidance only
-           </p>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">
+            Measurements are approximate and intended for rehabilitation guidance only
+          </p>
         </div>
       </main>
 

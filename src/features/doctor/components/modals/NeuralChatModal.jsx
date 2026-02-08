@@ -8,6 +8,7 @@ const NeuralChatModal = ({ isOpen, onClose, chatPartnerId = null, chatPartnerNam
     const { user, userData } = useAuth();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
     const isAIChat = !chatPartnerId;
 
@@ -38,10 +39,20 @@ const NeuralChatModal = ({ isOpen, onClose, chatPartnerId = null, chatPartnerNam
 
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        if (!input.trim() || isTyping) return;
+
+        const userMsgText = input;
+        const userMsgHtml = { id: Date.now(), text: userMsgText, sender: 'doctor', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
 
         const currentInput = input;
         setInput('');
+        setIsTyping(true);
+
+        try {
+            // Get history for context (excluding the first welcome message if preferred, or include all)
+            const history = messages.slice(1);
+
+            const aiResponseText = await getGeminiResponse(userMsgText, history);
 
         if (isAIChat) {
             const userMsg = {

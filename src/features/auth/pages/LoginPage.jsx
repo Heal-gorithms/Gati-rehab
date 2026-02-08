@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, User, ArrowLeft, Activity, Stethoscope, Eye, EyeOff } from 'lucide-react';
 import {
   loginWithEmail,
+  signupWithEmail,
   loginWithGoogle,
   setupRecaptcha,
   sendPhoneOTP,
@@ -10,6 +11,7 @@ import {
   resetPassword,
   DEMO_CREDENTIALS,
 } from '../services/authService';
+import { logAction } from '../../../shared/utils/auditLogger';
 
 // Updated Input to handle disabled state styling
 const Input = ({ icon, type, placeholder, value, onChange, id, name, className = '', ringColor, textColor, suffix, ...props }) => (
@@ -50,8 +52,17 @@ const PrimaryButton = ({ loading, text, bgColor, bgHoverColor }) => (
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [userType, setUserType] = useState('patient'); // 'patient' or 'doctor'
   const [authMode, setAuthMode] = useState('email'); // 'email', 'phone', 'forgot'
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  // Set initial mode from navigation state
+  useEffect(() => {
+    if (location.state?.mode === 'signup') {
+      setIsSignUp(true);
+    }
+  }, [location.state]);
 
   // Dynamic Theme Colors based on userType
   const bgColor = userType === 'patient' ? 'bg-blue-600' : 'bg-teal-600';
@@ -64,6 +75,7 @@ const LoginPage = () => {
 
   // Input states
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -97,8 +109,15 @@ const LoginPage = () => {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const { userData } = await loginWithEmail(email, password);
-      handleAuthRedirect(userData);
+      if (isSignUp) {
+        await signupWithEmail(email, password, name, userType);
+        // After signup, we might need to fetch the newly created userData or just redirect
+        // Since signupWithEmail already creates the document, we can redirect
+        handleAuthRedirect({ userType });
+      } else {
+        const { userData } = await loginWithEmail(email, password);
+        handleAuthRedirect(userData);
+      }
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
@@ -106,7 +125,8 @@ const LoginPage = () => {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const { userData } = await loginWithGoogle();
+      const { user, userData } = await loginWithGoogle();
+      await logAction(user.uid, 'LOGIN', { method: 'google', userType: userData.userType });
       handleAuthRedirect(userData);
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
@@ -129,7 +149,8 @@ const LoginPage = () => {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const { userData } = await verifyPhoneOTP(confirmationResult, otp);
+      const { user, userData } = await verifyPhoneOTP(confirmationResult, otp);
+      await logAction(user.uid, 'LOGIN', { method: 'phone', userType: userData.userType });
       handleAuthRedirect(userData);
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
@@ -222,6 +243,24 @@ const LoginPage = () => {
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
               <form onSubmit={handleEmailLogin} className="space-y-4">
+                {isSignUp && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Input
+                      icon={<User className="w-5 h-5" />}
+                      type="text"
+                      id="signup-name"
+                      name="name"
+                      placeholder="Full Name"
+                      value={name}
+                      onChange={setName}
+                      autoComplete="name"
+                      ringColor={ringColor}
+                      textColor={textColor}
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+
                 <Input
                   icon={<Mail className="w-5 h-5" />}
                   type="email"
@@ -279,8 +318,28 @@ const LoginPage = () => {
                   </div>
                 )}
 
-                <PrimaryButton loading={loading} text={userType === 'patient' ? 'Start Recovery' : 'Access Dashboard'} bgColor={bgColor} bgHoverColor={bgHoverColor} />
+                <PrimaryButton
+                  loading={loading}
+                  text={isSignUp
+                    ? (userType === 'patient' ? 'Join Recovery' : 'Register Clinic')
+                    : (userType === 'patient' ? 'Start Recovery' : 'Access Dashboard')
+                  }
+                  bgColor={bgColor}
+                  bgHoverColor={bgHoverColor}
+                />
               </form>
+
+              {/* Sign Up / Login Toggle */}
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  disabled={loading}
+                  className={`text-sm font-bold ${textColor} hover:opacity-80 transition-opacity disabled:opacity-50`}
+                >
+                  {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+                </button>
+              </div>
 
               {/* Enhanced Divider */}
               <div className="relative py-2">

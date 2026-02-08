@@ -25,9 +25,9 @@ const QuickActionsPanel = ({ onActionClick }) => {
       description: 'Generate clinical docs',
     },
     {
-      id: 'messages',
-      label: 'Neural Chat',
-      icon: MessageSquare,
+      id: 'neural-chat',
+      label: 'Neural Engine',
+      icon: Sparkles,
       color: 'orange',
       description: 'Encrypted patient chat',
     },

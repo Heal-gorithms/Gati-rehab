@@ -10,8 +10,11 @@ const PatientQualityTrendChart = lazy(() => import('../components/charts/Patient
 import NavHeader from '../../../shared/components/NavHeader';
 import SessionReport from '../../patient/components/SessionReport';
 import ManagePlanModal from '../components/modals/ManagePlanModal';
+import ChatWindow from '../../shared/components/ChatWindow';
 import { onAuthChange } from '../../auth/services/authService';
 import { getPatientDetails, getPatientSessions } from '../services/doctorService';
+import { exportToCSV } from '../../../shared/utils/csvExport';
+import { logAction } from '../../../shared/utils/auditLogger';
 
 const PatientDetailView = () => {
   const { patientId } = useParams();
@@ -25,6 +28,7 @@ const PatientDetailView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [managePlanOpen, setManagePlanOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Auth listener - Get doctor profile
   useEffect(() => {
@@ -92,6 +96,25 @@ const PatientDetailView = () => {
     }
   }, [patientId]);
 
+  const handleExportData = async () => {
+    if (!sessions || sessions.length === 0) return;
+
+    const exportData = sessions.map(s => ({
+      Exercise: s.exerciseName,
+      Date: s.date?.toDate ? s.date.toDate().toLocaleString() : s.date,
+      Reps: s.reps,
+      'Quality Score %': s.quality,
+      'Range of Motion (Deg)': s.rangeOfMotion,
+      'Duration (Sec)': s.duration
+    }));
+
+    if (doctorProfile) {
+      await logAction(doctorProfile.id, 'EXPORT_DATA', { patientId, patientName: patient?.name });
+    }
+
+    exportToCSV(exportData, `Clinical_Report_${patient?.name?.replace(/\s+/g, '_')}_${new Date().toLocaleDateString()}.csv`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -141,13 +164,30 @@ const PatientDetailView = () => {
             <span className="font-medium">Back to Patients</span>
           </button>
 
-          <button
-            onClick={() => setManagePlanOpen(true)}
-            className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95"
-          >
-            <ClipboardList className="w-4 h-4" />
-            Manage Care Plan
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportData}
+              disabled={sessions.length === 0}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              Export Clinical Report
+            </button>
+            <button
+              onClick={() => setChatOpen(true)}
+              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl active:scale-95"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Message Patient
+            </button>
+            <button
+              onClick={() => setManagePlanOpen(true)}
+              className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95"
+            >
+              <ClipboardList className="w-4 h-4" />
+              Manage Care Plan
+            </button>
+          </div>
         </div>
 
         {/* Patient Header */}
@@ -266,6 +306,24 @@ const PatientDetailView = () => {
         patientId={patientId}
         patientName={patient?.name || 'Patient'}
       />
+
+      {chatOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setChatOpen(false)} />
+          <div className="relative w-full max-w-lg">
+            <button
+              onClick={() => setChatOpen(false)}
+              className="absolute -top-12 right-0 text-white hover:text-blue-200 transition-colors flex items-center gap-2 font-bold"
+            >
+              <X className="w-6 h-6" /> Close Chat
+            </button>
+            <ChatWindow
+              currentUser={{ uid: doctorProfile.id }}
+              otherUser={{ uid: patientId, name: patient.name }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

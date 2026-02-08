@@ -245,10 +245,12 @@ const getProgressLevel = (adherenceRate) => {
  * Get adherence trend data for charts (last 7 days)
  * FIX: Accepts 'existingPatients' to avoid re-fetching (Fixes Point 2)
  */
-export const getAdherenceTrendData = async (doctorId, existingPatients = null) => {
+export const getAdherenceTrendData = async (doctorId, patients = null) => {
   try {
     // FIX: Use passed patients if available, else fetch
-    const patients = existingPatients || await getDoctorPatients(doctorId);
+    if (!patients) {
+      patients = await getDoctorPatients(doctorId);
+    }
 
     if (patients.length === 0) {
       return [];
@@ -286,9 +288,11 @@ export const getAdherenceTrendData = async (doctorId, existingPatients = null) =
  * Get form quality trend data for charts (last 7 days)
  * FIX: Accepts 'existingPatients' to avoid re-fetching (Fixes Point 2)
  */
-export const getFormQualityTrendData = async (doctorId, existingPatients = null) => {
+export const getFormQualityTrendData = async (doctorId, patients = null) => {
   try {
-    const patients = existingPatients || await getDoctorPatients(doctorId);
+    if (!patients) {
+      patients = await getDoctorPatients(doctorId);
+    }
     if (patients.length === 0) return [];
 
     const last7Days = [];
@@ -314,7 +318,7 @@ export const getFormQualityTrendData = async (doctorId, existingPatients = null)
  */
 export const getROMTrendData = async (doctorId, _existingPatients = null) => {
   try {
-    // Even if ROM data is mocked, we accept the arg for consistency
+    // Even if ROM data is mocked, we accept the args for consistency
     const last4Weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
 
     return last4Weeks.map(week => ({
@@ -340,6 +344,7 @@ export const addPatientToDoctor = async (doctorId, patientData) => {
     await setDoc(doc(db, 'users', patientId), {
       ...patientData,
       userType: 'patient',
+      doctorId: doctorId, // Link the doctor to the patient
       createdAt: serverTimestamp(),
       adherenceRate: 0,
       completedSessions: 0,

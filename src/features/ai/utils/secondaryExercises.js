@@ -127,8 +127,8 @@ export const validateStartingPosition = (angles) => {
     message: allValid 
       ? 'Perfect starting position! Ready to begin.'
       : 'Adjust your position: ' + Object.entries(isValid)
-          .filter(([_, v]) => !v)
-          .map(([k, _]) => k)
+          .filter(([, v]) => !v)
+          .map(([k]) => k)
           .join(', '),
   };
 };
@@ -270,6 +270,11 @@ export const AVAILABLE_EXERCISES = {
   'shoulder-raises': {
     name: 'Shoulder Raises',
     description: 'Raise your arms to shoulder height',
+    difficulty: 'Easy',
+  },
+  'elbow-flexion': {
+    name: 'Elbow Flexion',
+    description: 'Bend and straighten your elbow',
     difficulty: 'Easy',
   },
 };

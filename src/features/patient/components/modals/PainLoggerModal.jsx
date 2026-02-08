@@ -13,6 +13,16 @@ const PainLoggerModal = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        if (isOpen) {
+            window.addEventListener('keydown', handleEscape);
+        }
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [isOpen, onClose]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!user) return;

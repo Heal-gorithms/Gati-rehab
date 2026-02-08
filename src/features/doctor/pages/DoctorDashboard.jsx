@@ -77,7 +77,7 @@ const DoctorDashboard = () => {
   const handleActionClick = (id) => {
     if (id === 'add-patient') {
       setAddPatientOpen(true);
-    } else if (id === 'messages') {
+    } else if (id === 'neural-chat') {
       setChatOpen(true);
     } else if (id === 'schedule') {
       setAppointmentOpen(true);
@@ -95,7 +95,6 @@ const DoctorDashboard = () => {
     // 1. Listen for patient updates
     const unsubscribe = subscribeToDoctorPatients(user.uid, async (updatedPatients) => {
       setPatients(updatedPatients);
-      setLoading(false);
 
       // 2. Pass the fresh data to charts immediately (Fixes Point 2 & 3)
       // This prevents re-fetching the patients inside the chart functions
@@ -104,13 +103,14 @@ const DoctorDashboard = () => {
         const [adherence, quality, rom] = await Promise.all([
           getAdherenceTrendData(user.uid, updatedPatients),
           getFormQualityTrendData(user.uid, updatedPatients),
-          getROMTrendData(user.uid, updatedPatients),
+          getROMTrendData(user.uid),
         ]);
         setChartData({ adherenceTrend: adherence, formQualityTrend: quality, romTrend: rom });
       } catch (err) {
         console.error('Error fetching charts:', err);
       } finally {
         setChartsLoading(false);
+        setLoading(false);
       }
     });
 
@@ -135,6 +135,17 @@ const DoctorDashboard = () => {
       (filterAdherence === 'low' && p.adherenceRate < 60);
     return matchesSearch && matchesFilter;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-teal-600 border-opacity-20 border-t-teal-600"></div>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Accessing Command Center...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F1F5F9]">
@@ -288,7 +299,10 @@ const DoctorDashboard = () => {
 
           {/* Sidebar Area - Stacks on mobile */}
           <div className="lg:col-span-4 space-y-8">
-            <DoctorProfileCard doctorProfile={userData} />
+            <DoctorProfileCard
+              doctorProfile={userData}
+              onEditClick={() => setSettingsOpen(true)}
+            />
 
             <QuickActionsPanel onActionClick={handleActionClick} />
 

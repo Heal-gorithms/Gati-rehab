@@ -1,7 +1,7 @@
 
 // NavHeader Component - Navigation header with Auth integration
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Activity, LayoutDashboard, LogOut, User, Settings, Zap, Compass, Sparkles, Smartphone } from 'lucide-react';
+import { Home, Activity, LayoutDashboard, LogOut, User, Settings, Zap, Compass, Sparkles, UserCircle, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../features/auth/context/AuthContext';
 
 const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick = null, theme = 'light' }) => {
@@ -71,6 +71,18 @@ const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick
                     icon={<Activity className="w-4 h-4" />}
                     label="Recovery"
                   />
+                  <NavButton
+                    active={isActive('/profile')}
+                    onClick={() => navigate('/profile')}
+                    icon={<UserCircle className="w-4 h-4" />}
+                    label="Profile"
+                  />
+                  <NavButton
+                    active={isActive('/messages')}
+                    onClick={() => navigate('/messages')}
+                    icon={<MessageSquare className="w-4 h-4" />}
+                    label="Messages"
+                  />
                 </>
               ) : (
                 <>
@@ -111,7 +123,7 @@ const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick
                     {userType}
                   </p>
                 </div>
-              </div>
+              </button>
 
               {onSettingsClick && (
                 <button
@@ -149,16 +161,6 @@ const NavButton = ({ active, onClick, icon, label }) => (
   >
     {icon}
     <span>{label}</span>
-  </button>
-);
-
-const MobileNavButton = ({ active, onClick, icon, label }) => (
-  <button
-    onClick={onClick}
-    className={`flex flex-col items-center gap-1.5 px-6 py-2 transition-all ${active ? 'text-blue-400' : 'text-slate-300'}`}
-  >
-    {icon}
-    <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
   </button>
 );
 

@@ -21,6 +21,9 @@ import NavHeader from '../../../shared/components/NavHeader';
 import { useAuth } from '../../auth/context/AuthContext';
 import { saveSession } from '../services/sessionService';
 import { calculateFormQualityScore, trackRangeOfMotion } from '../utils/enhancedScoring';
+import { AVAILABLE_EXERCISES } from '../../ai/utils/secondaryExercises';
+import { getPrimaryAngle } from '../../ai/utils/angleCalculations';
+import { logAction } from '../../../shared/utils/auditLogger';
 
 const WorkoutSession = () => {
   const navigate = useNavigate();
@@ -38,15 +41,12 @@ const WorkoutSession = () => {
   const frameDataRef = useRef([]); // Use ref for high-frequency data to avoid re-renders
   const [realTimeFeedback, setRealTimeFeedback] = useState(null);
   const [isDevMode, setIsDevMode] = useState(location.state?.devMode || false);
+  const [frameData, setFrameData] = useState([]);
 
-  const availableExercises = [
-    { id: 'knee-bends', name: 'Knee Bends' },
-    { id: 'leg-raises', name: 'Leg Raises' },
-    { id: 'hip-flexion', name: 'Hip Flexion' },
-    { id: 'shoulder-raises', name: 'Shoulder Raises' },
-    { id: 'elbow-flexion', name: 'Elbow Flexion' },
-    { id: 'standing-march', name: 'Standing March' }
-  ];
+  const availableExercises = Object.entries(AVAILABLE_EXERCISES).map(([id, data]) => ({
+    id,
+    name: data.name
+  }));
 
   const timerRef = useRef(null);
   const previousPhaseRef = useRef('start');
@@ -94,10 +94,13 @@ const WorkoutSession = () => {
 
     const { angles, feedback: rtFeedback, timestamp } = poseData;
 
-    // Store frame data in ref to avoid re-renders on every frame (up to 60fps)
-    frameDataRef.current.push({ angles, timestamp, feedback: rtFeedback });
-    if (frameDataRef.current.length > 1000) {
-      frameDataRef.current.shift();
+    // Store frame data for later analysis (limited to prevent memory issues)
+    // Store frame data for later analysis
+    frameDataRef.current = [...frameDataRef.current, { angles, timestamp, feedback: rtFeedback }].slice(-1000);
+
+    // Periodically update state for UI elements that might need it, but keep it minimal
+    if (frameDataRef.current.length % 10 === 0) {
+      setFrameData(frameDataRef.current);
     }
 
     // Update current angle (knee angle for knee-bends)
@@ -127,15 +130,21 @@ const WorkoutSession = () => {
     return () => clearInterval(timerRef.current);
   }, [sessionActive]);
 
-  const handleStartSession = () => {
+  const handleStartSession = async () => {
     setSessionActive(true);
     if (!sessionStartTime) setSessionStartTime(Date.now());
     setFeedback('Great! Start your first rep');
+    if (user) {
+      await logAction(user.uid, 'WORKOUT_START', { exercise: currentExercise });
+    }
   };
 
-  const handlePauseSession = () => {
+  const handlePauseSession = async () => {
     setSessionActive(false);
     setFeedback('Session paused');
+    if (user) {
+      await logAction(user.uid, 'WORKOUT_PAUSE', { exercise: currentExercise, elapsedSeconds: elapsedTime });
+    }
   };
 
   const handleEndSession = async () => {
@@ -156,6 +165,11 @@ const WorkoutSession = () => {
 
     try {
       if (user) {
+        await logAction(user.uid, 'WORKOUT_FINISH', {
+          exercise: currentExercise,
+          reps: repCount,
+          quality: finalQuality.overallScore
+        });
         await saveSession(sessionData, user.uid);
       }
       navigate('/patient-dashboard', { state: { sessionCompleted: true } });
@@ -298,27 +312,27 @@ const WorkoutSession = () => {
           </div>
 
           {/* Metrics - More compact for mobile */}
-          <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-900/50 rounded-2xl border border-white/5 p-4 flex flex-col justify-center">
-              <div className="flex justify-between items-end mb-2">
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+            <div className="bg-slate-900/50 rounded-xl sm:rounded-2xl border border-white/5 p-3 sm:p-4 flex flex-col justify-center">
+              <div className="flex justify-between items-end mb-1 sm:mb-2">
                 <div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Live Feed</p>
-                  <p className="text-xs font-bold text-slate-300">Joint Angle</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Live Feed</p>
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-300">Joint Angle</p>
                 </div>
-                <span className="text-2xl font-black text-blue-400">{currentAngle}°</span>
+                <span className="text-lg sm:text-2xl font-black text-blue-400">{currentAngle}°</span>
               </div>
               <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${currentAngle / 1.8}%` }}></div>
               </div>
             </div>
 
-            <div className="bg-slate-900/50 rounded-2xl border border-white/5 p-4 flex flex-col justify-center">
-              <div className="flex justify-between items-end mb-2">
+            <div className="bg-slate-900/50 rounded-xl sm:rounded-2xl border border-white/5 p-3 sm:p-4 flex flex-col justify-center">
+              <div className="flex justify-between items-end mb-1 sm:mb-2">
                 <div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Neural AI</p>
-                  <p className="text-xs font-bold text-slate-300">Form Quality</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Neural AI</p>
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-300">Form Quality</p>
                 </div>
-                <span className="text-2xl font-black text-emerald-400">{formQuality}%</span>
+                <span className="text-lg sm:text-2xl font-black text-emerald-400">{formQuality}%</span>
               </div>
               <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${formQuality}%` }}></div>
