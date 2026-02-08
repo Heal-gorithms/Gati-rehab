@@ -18,6 +18,8 @@ const PRECACHE_ASSETS = [
   '/src/shared/components/NavHeader.jsx',
   '/src/shared/components/PWAInstallPrompt.jsx',
   '/src/features/auth/context/AuthContext.jsx',
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm/vision_wasm_internal.wasm',
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
 ];
 
 // Mobile-optimized API endpoints to cache
@@ -105,8 +107,8 @@ async function cacheFirstStrategy(request, cacheName) {
       cache.put(request, responseClone);
     }
     return networkResponse;
-  } catch (error) {
-    console.log('[Service Worker] Network failed, serving offline fallback');
+  } catch (err) {
+    console.log('[Service Worker] Network failed, serving offline fallback', err);
 
     // Return offline page for navigation requests
     if (request.mode === 'navigate') {
@@ -128,8 +130,8 @@ async function networkFirstStrategy(request, cacheName) {
       cache.put(request, responseClone);
     }
     return networkResponse;
-  } catch (error) {
-    console.log('[Service Worker] API failed, serving cached response');
+  } catch (err) {
+    console.log('[Service Worker] API failed, serving cached response', err);
     const cachedResponse = await caches.match(request);
     return cachedResponse || new Response('{"error": "Offline"}', {
       status: 503,
@@ -296,7 +298,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'open') {
     event.waitUntil(
-      clients.openWindow('/')
+      self.clients.openWindow('/')
     );
   }
 });

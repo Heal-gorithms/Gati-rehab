@@ -26,7 +26,7 @@ export const getPatientProfile = async (patientId) => {
     if (patientSnap.exists()) {
       return { id: patientSnap.id, ...patientSnap.data() };
     }
-    throw new Error('Patient not found');
+    return null;
   } catch (error) {
     console.error('[PatientService] Get profile error:', error);
     throw error;
@@ -38,9 +38,6 @@ export const getPatientProfile = async (patientId) => {
  */
 export const getPatientStats = async (patientId) => {
   try {
-    const patientData = await getPatientProfile(patientId);
-
-    // Get weekly stats
     const sessionsRef = collection(db, 'sessions');
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -54,23 +51,21 @@ export const getPatientStats = async (patientId) => {
     const weeklySnap = await getDocs(weeklyQuery);
     const weeklyCompleted = weeklySnap.size;
 
+    // In a real app, these would come from the user document or a stats document
+    const patientRef = doc(db, 'users', patientId);
+    const patientSnap = await getDoc(patientRef);
+    const patientData = patientSnap.exists() ? patientSnap.data() : {};
+
     return {
       totalSessions: patientData.completedSessions || 0,
-      weeklyGoal: 5, // Can be customized per patient
+      weeklyGoal: patientData.weeklyGoal || 5,
       completed: weeklyCompleted,
       streak: patientData.streak || 0,
       adherenceRate: patientData.adherenceRate || 0,
     };
   } catch (error) {
     console.error('[PatientService] Get stats error:', error);
-    // Return default values on error
-    return {
-      totalSessions: 0,
-      weeklyGoal: 5,
-      completed: 0,
-      streak: 0,
-      adherenceRate: 0,
-    };
+    throw error;
   }
 };
 
@@ -87,12 +82,10 @@ export const getTodayRoutine = async (patientId) => {
       return data.exercises || [];
     }
 
-    // Return default routine if none exists
-    // Return empty routine if none exists
     return [];
   } catch (error) {
     console.error('[PatientService] Get routine error:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -105,6 +98,7 @@ export const getRecentSessions = async (patientId, limitCount = 10) => {
     const q = query(
       sessionsRef,
       where('patientId', '==', patientId),
+      orderBy('date', 'desc'),
       limit(limitCount)
     );
 
@@ -127,7 +121,7 @@ export const getRecentSessions = async (patientId, limitCount = 10) => {
     return sessions;
   } catch (error) {
     console.error('[PatientService] Get recent sessions error:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -154,6 +148,7 @@ export const subscribeToRecentSessions = (patientId, callback, limitCount = 10) 
   const q = query(
     sessionsRef,
     where('patientId', '==', patientId),
+    orderBy('date', 'desc'),
     limit(limitCount)
   );
 
@@ -242,5 +237,3 @@ const formatDate = (timestamp) => {
 
   return date.toLocaleDateString();
 };
-
-
