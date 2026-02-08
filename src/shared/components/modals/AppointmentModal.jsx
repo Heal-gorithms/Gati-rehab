@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, User, Video, MapPin, CheckCircle, Save } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import {
   collection,
   addDoc,
@@ -25,6 +26,9 @@ const AppointmentModal = ({ isOpen, onClose, patientId = null, doctorId = null, 
     type: 'Video Call',
     notes: ''
   });
+
+  // Accessibility: Handle Escape key
+  useEscapeKey(onClose, isOpen);
 
   useEffect(() => {
     if (!isOpen || (!patientId && !doctorId)) return;
@@ -102,7 +106,11 @@ const AppointmentModal = ({ isOpen, onClose, patientId = null, doctorId = null, 
               <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Rehabilitation Planning</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-2xl transition-colors">
+          <button
+            onClick={onClose}
+            className="p-3 hover:bg-white/10 rounded-2xl transition-colors"
+            aria-label="Close modal"
+          >
             <X className="w-6 h-6 text-slate-400" />
           </button>
         </div>

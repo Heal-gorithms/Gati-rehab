@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, User, Bell, Sliders, Save, Camera } from 'lucide-react';
+import { useEscapeKey } from '../../../../shared/hooks/useEscapeKey';
 
 const SettingsModal = ({ isOpen, onClose, doctorProfile, onSave }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -20,6 +21,9 @@ const SettingsModal = ({ isOpen, onClose, doctorProfile, onSave }) => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Accessibility: Handle Escape key
+  useEscapeKey(onClose, isOpen);
 
   // FIX 1: Lock Body Scroll when modal is open
   useEffect(() => {
@@ -98,6 +102,7 @@ const SettingsModal = ({ isOpen, onClose, doctorProfile, onSave }) => {
             <button
               onClick={onClose}
               className="p-4 hover:bg-slate-100 rounded-[1.5rem] transition-all active:scale-95 group"
+              aria-label="Close settings"
             >
               <X className="w-6 h-6 text-slate-400 group-hover:text-slate-900 transition-colors" />
             </button>
@@ -151,7 +156,10 @@ const SettingsModal = ({ isOpen, onClose, doctorProfile, onSave }) => {
                             <User className="w-12 h-12 text-white" />
                           </div>
                         )}
-                        <button className="absolute -bottom-2 -right-2 p-3 bg-white text-slate-900 rounded-2xl shadow-lg border border-slate-100 hover:bg-blue-600 hover:text-white transition-all active:scale-90">
+                        <button
+                          className="absolute -bottom-2 -right-2 p-3 bg-white text-slate-900 rounded-2xl shadow-lg border border-slate-100 hover:bg-blue-600 hover:text-white transition-all active:scale-90"
+                          aria-label="Change profile picture"
+                        >
                           <Camera className="w-4 h-4" />
                         </button>
                       </div>

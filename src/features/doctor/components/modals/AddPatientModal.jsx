@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { X, User, Mail, Activity, Phone, Clipboard, Loader2, CheckCircle2, UserPlus } from 'lucide-react';
+import { useEscapeKey } from '../../../../shared/hooks/useEscapeKey';
 import { addPatientToDoctor } from '../../services/doctorService';
 
 const AddPatientModal = ({ isOpen, onClose, doctorId }) => {
@@ -14,6 +15,9 @@ const AddPatientModal = ({ isOpen, onClose, doctorId }) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+
+    // Accessibility: Handle Escape key
+    useEscapeKey(onClose, isOpen);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -65,6 +69,7 @@ const AddPatientModal = ({ isOpen, onClose, doctorId }) => {
                         <button
                             onClick={onClose}
                             className="p-3 hover:bg-slate-100 rounded-2xl transition-colors"
+                            aria-label="Close modal"
                         >
                             <X className="w-6 h-6 text-slate-400" />
                         </button>

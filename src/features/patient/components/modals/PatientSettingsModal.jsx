@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, User, Bell, Sliders, Save, Camera, Target, Shield, Smartphone } from 'lucide-react';
+import { useEscapeKey } from '../../../../shared/hooks/useEscapeKey';
 
 const PatientSettingsModal = ({ isOpen, onClose, patientProfile, onSave }) => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -24,15 +25,8 @@ const PatientSettingsModal = ({ isOpen, onClose, patientProfile, onSave }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
-    useEffect(() => {
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') onClose();
-        };
-        if (isOpen) {
-            window.addEventListener('keydown', handleEscape);
-        }
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [isOpen, onClose]);
+    // Accessibility: Handle Escape key
+    useEscapeKey(onClose, isOpen);
 
     useEffect(() => {
         if (patientProfile) {
@@ -96,6 +90,7 @@ const PatientSettingsModal = ({ isOpen, onClose, patientProfile, onSave }) => {
                     <button
                         onClick={onClose}
                         className="p-3 hover:bg-white/10 rounded-2xl transition-colors"
+                        aria-label="Close settings"
                     >
                         <X className="w-6 h-6 text-slate-400" />
                     </button>
@@ -149,7 +144,13 @@ const PatientSettingsModal = ({ isOpen, onClose, patientProfile, onSave }) => {
                                                         <User className="w-16 h-16 text-slate-300" />
                                                     </div>
                                                 )}
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                                <div
+                                                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                                                    aria-label="Change profile picture"
+                                                    role="button"
+                                                    tabIndex="0"
+                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
+                                                >
                                                     <Camera className="w-8 h-8 text-white" />
                                                 </div>
                                             </div>

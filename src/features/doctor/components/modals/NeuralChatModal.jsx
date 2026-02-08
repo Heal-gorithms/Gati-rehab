@@ -1,6 +1,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Send, User, Bot, Sparkles, MessageSquare, ShieldCheck } from 'lucide-react';
+import { useEscapeKey } from '../../../../shared/hooks/useEscapeKey';
 import { useAuth } from '../../../auth/context/AuthContext';
 import { sendMessage, subscribeToMessages, getChatId } from '../../../chat/services/chatService';
 import { getGeminiResponse } from '../../../../shared/services/geminiService';
@@ -13,6 +14,9 @@ const NeuralChatModal = ({ isOpen, onClose, chatPartnerId = null, chatPartnerNam
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
     const isAIChat = !chatPartnerId;
+
+    // Accessibility: Handle Escape key
+    useEscapeKey(onClose, isOpen);
 
     const aiWelcomeMessage = useMemo(() => ({
         id: 'ai-welcome',
@@ -138,7 +142,11 @@ const NeuralChatModal = ({ isOpen, onClose, chatPartnerId = null, chatPartnerNam
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-2xl transition-colors">
+                    <button
+                        onClick={onClose}
+                        className="p-3 hover:bg-white/10 rounded-2xl transition-colors"
+                        aria-label="Close chat"
+                    >
                         <X className="w-6 h-6 text-slate-400" />
                     </button>
                 </div>
