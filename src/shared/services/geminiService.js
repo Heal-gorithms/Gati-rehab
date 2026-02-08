@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(API_KEY);
+const genAI = new GoogleGenAI(API_KEY);
 
 // This tells the AI how to behave for every message in the session
 const SYSTEM_INSTRUCTION = `
