@@ -10,6 +10,7 @@ import {
   resetPassword,
   DEMO_CREDENTIALS,
 } from '../services/authService';
+import { logAction } from '../../../shared/utils/auditLogger';
 
 // Updated Input to handle disabled state styling
 const Input = ({ icon, type, placeholder, value, onChange, id, name, className = '', ringColor, textColor, suffix, ...props }) => (
@@ -96,7 +97,8 @@ const LoginPage = () => {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const { userData } = await loginWithEmail(email, password);
+      const { user, userData } = await loginWithEmail(email, password);
+      await logAction(user.uid, 'LOGIN', { method: 'email', userType: userData.userType });
       handleAuthRedirect(userData);
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
@@ -105,7 +107,8 @@ const LoginPage = () => {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const { userData } = await loginWithGoogle();
+      const { user, userData } = await loginWithGoogle();
+      await logAction(user.uid, 'LOGIN', { method: 'google', userType: userData.userType });
       handleAuthRedirect(userData);
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
@@ -128,7 +131,8 @@ const LoginPage = () => {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const { userData } = await verifyPhoneOTP(confirmationResult, otp);
+      const { user, userData } = await verifyPhoneOTP(confirmationResult, otp);
+      await logAction(user.uid, 'LOGIN', { method: 'phone', userType: userData.userType });
       handleAuthRedirect(userData);
     } catch (err) { setError(err.message); } finally { setLoading(false); }
   };

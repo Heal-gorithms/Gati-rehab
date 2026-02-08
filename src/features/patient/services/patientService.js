@@ -11,6 +11,8 @@ import {
   limit,
   getDocs,
   onSnapshot,
+  addDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 
@@ -25,7 +27,7 @@ export const getPatientProfile = async (patientId) => {
     if (patientSnap.exists()) {
       return { id: patientSnap.id, ...patientSnap.data() };
     }
-    throw new Error('Patient not found');
+    return null;
   } catch (error) {
     console.error('[PatientService] Get profile error:', error);
     throw error;
@@ -37,9 +39,6 @@ export const getPatientProfile = async (patientId) => {
  */
 export const getPatientStats = async (patientId) => {
   try {
-    const patientData = await getPatientProfile(patientId);
-
-    // Get weekly stats
     const sessionsRef = collection(db, 'sessions');
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -53,23 +52,21 @@ export const getPatientStats = async (patientId) => {
     const weeklySnap = await getDocs(weeklyQuery);
     const weeklyCompleted = weeklySnap.size;
 
+    // In a real app, these would come from the user document or a stats document
+    const patientRef = doc(db, 'users', patientId);
+    const patientSnap = await getDoc(patientRef);
+    const patientData = patientSnap.exists() ? patientSnap.data() : {};
+
     return {
       totalSessions: patientData.completedSessions || 0,
-      weeklyGoal: 5, // Can be customized per patient
+      weeklyGoal: patientData.weeklyGoal || 5,
       completed: weeklyCompleted,
       streak: patientData.streak || 0,
       adherenceRate: patientData.adherenceRate || 0,
     };
   } catch (error) {
     console.error('[PatientService] Get stats error:', error);
-    // Return default values on error
-    return {
-      totalSessions: 0,
-      weeklyGoal: 5,
-      completed: 0,
-      streak: 0,
-      adherenceRate: 0,
-    };
+    throw error;
   }
 };
 
@@ -86,12 +83,10 @@ export const getTodayRoutine = async (patientId) => {
       return data.exercises || [];
     }
 
-    // Return default routine if none exists
-    // Return empty routine if none exists
     return [];
   } catch (error) {
     console.error('[PatientService] Get routine error:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -104,6 +99,7 @@ export const getRecentSessions = async (patientId, limitCount = 10) => {
     const q = query(
       sessionsRef,
       where('patientId', '==', patientId),
+      orderBy('date', 'desc'),
       limit(limitCount)
     );
 
@@ -126,7 +122,7 @@ export const getRecentSessions = async (patientId, limitCount = 10) => {
     return sessions;
   } catch (error) {
     console.error('[PatientService] Get recent sessions error:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -153,6 +149,7 @@ export const subscribeToRecentSessions = (patientId, callback, limitCount = 10) 
   const q = query(
     sessionsRef,
     where('patientId', '==', patientId),
+    orderBy('date', 'desc'),
     limit(limitCount)
   );
 
@@ -203,6 +200,48 @@ export const getTrendData = async (patientId) => {
 };
 
 /**
+ * Log pain level
+ */
+export const logPainLevel = async (patientId, level, note = '') => {
+  try {
+    const painLogsRef = collection(db, 'pain_logs');
+    await addDoc(painLogsRef, {
+      patientId,
+      level: parseInt(level),
+      note,
+      timestamp: serverTimestamp()
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('[PatientService] Log pain error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get pain history
+ */
+export const getPainHistory = async (patientId, limitCount = 7) => {
+  try {
+    const painLogsRef = collection(db, 'pain_logs');
+    const q = query(
+      painLogsRef,
+      where('patientId', '==', patientId),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('[PatientService] Get pain history error:', error);
+    throw error;
+  }
+};
+
+/**
  * Helper: Format date for display
  */
 const formatDate = (timestamp) => {
@@ -222,5 +261,3 @@ const formatDate = (timestamp) => {
 
   return date.toLocaleDateString();
 };
-
-

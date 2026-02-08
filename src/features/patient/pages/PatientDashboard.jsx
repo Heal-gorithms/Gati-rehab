@@ -21,12 +21,15 @@ import {
   Star,
   ShieldCheck,
   MessageSquare,
-  Terminal
+  Terminal,
+  History
 } from 'lucide-react';
 import NavHeader from '../../../shared/components/NavHeader';
 import SessionReport from '../components/SessionReport';
 import PainLoggerModal from '../components/modals/PainLoggerModal';
 import PatientSettingsModal from '../components/modals/PatientSettingsModal';
+import ScheduleModal from '../components/modals/ScheduleModal';
+import PainTracker from '../components/PainTracker';
 import { useAuth } from '../../auth/context/AuthContext';
 import { updateUserProfile } from '../../auth/services/authService';
 import {
@@ -53,6 +56,7 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [painModalOpen, setPainModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const handleSettingsUpdate = async (data) => {
     try {
@@ -97,7 +101,9 @@ const PatientDashboard = () => {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [user]);
 
   if (loading) {
@@ -250,7 +256,10 @@ const PatientDashboard = () => {
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-none mb-2">Performance History</h2>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Your recovery path records</p>
                 </div>
-                <button className="flex items-center gap-2 text-blue-600 font-black text-xs group text-left">
+                <button
+                  onClick={() => navigate('/history')}
+                  className="flex items-center gap-2 text-blue-600 font-black text-xs group text-left"
+                >
                   Full Analytics History <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </button>
               </div>
@@ -280,7 +289,10 @@ const PatientDashboard = () => {
 
           {/* Right Sidebar */}
           <div className="xl:col-span-4 space-y-10">
-            {/* Quick Progress Summary */}
+            {/* Pain Tracker Integration */}
+            <PainTracker />
+
+            {/* Daily Roadmap */}
             <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/50 border border-slate-50 overflow-hidden relative group">
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-6 sm:mb-8">Daily Roadmap</h3>
@@ -307,22 +319,50 @@ const PatientDashboard = () => {
               </div>
             </div>
 
-            {/* Quick Actions - Higher Priority on Mobile */}
+            {/* Quick Actions */}
             <div className="bg-white rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/40 border border-slate-50">
               <div className="mb-6">
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-none mb-2 text-center md:text-left">Clinical Tools</h3>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center md:text-left">Quick Access Laboratory</p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-4">
-                <ActionTile icon={<Video className="w-5 h-5" />} label="Physio Link" color="blue" />
                 <ActionTile
-                  icon={<Plus className="w-5 h-5" />}
-                  label="Log Pain"
-                  color="rose"
-                  onClick={() => setPainModalOpen(true)}
+                  icon={<Video className="w-5 h-5" />}
+                  label="Schedule Call"
+                  color="blue"
+                  onClick={() => setScheduleOpen(true)}
                 />
-                <ActionTile icon={<FileText className="w-5 h-5" />} label="Reports" color="indigo" />
+                <ActionTile
+                  icon={<History className="w-5 h-5" />}
+                  label="History"
+                  color="indigo"
+                  onClick={() => navigate('/history')}
+                />
+                <ActionTile icon={<FileText className="w-5 h-5" />} label="Reports" color="rose" />
                 <ActionTile icon={<TrendingUp className="w-5 h-5" />} label="Trends" color="emerald" />
+              </div>
+            </div>
+
+            {/* Medication Reminders */}
+            <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-8 shadow-2xl shadow-slate-200/50 border border-slate-50">
+              <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                <ShieldCheck className="w-6 h-6 text-blue-500" /> Reminders
+              </h3>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-4">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Pain Relief</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">After Breakfast</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4 opacity-60">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Multivitamin</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taken 8:00 AM</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -354,22 +394,6 @@ const PatientDashboard = () => {
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-600/10 rounded-full blur-[60px] -ml-20 -mb-20"></div>
             </div>
-
-            {/* Achievement Widget */}
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[3rem] p-10 text-white shadow-2xl shadow-indigo-200">
-              <div className="flex items-center justify-between mb-6">
-                <Award className="w-10 h-10 text-white/50" />
-                <span className="text-xs font-black uppercase tracking-widest bg-white/20 px-4 py-1.5 rounded-full">New Achievement</span>
-              </div>
-              <h3 className="text-2xl font-black mb-2">Steady Surgeon</h3>
-              <p className="text-indigo-100 font-bold text-sm mb-6 opacity-80">You've maintained an A+ quality score for 5 consecutive sessions!</p>
-              <div className="flex items-center -space-x-3">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-white/20 border-2 border-indigo-700 backdrop-blur-md flex items-center justify-center text-[10px] font-black mt-2">🎖️</div>
-                ))}
-                <div className="w-10 h-10 rounded-full bg-white text-indigo-700 flex items-center justify-center text-xs font-black mt-2 shadow-lg">+12</div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -390,6 +414,13 @@ const PatientDashboard = () => {
         onClose={() => setSettingsOpen(false)}
         patientProfile={userData}
         onSave={handleSettingsUpdate}
+      />
+
+      <ScheduleModal
+        isOpen={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        user={{ uid: user.uid, name: userData?.name }}
+        doctorId={userData?.doctorId}
       />
     </div>
   );

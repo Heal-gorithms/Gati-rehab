@@ -1,7 +1,7 @@
 
 // NavHeader Component - Navigation header with Auth integration
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Activity, LayoutDashboard, LogOut, User, Settings, Zap, Compass, Sparkles, Smartphone } from 'lucide-react';
+import { Home, Activity, LayoutDashboard, LogOut, User, Settings, Zap, Compass, Sparkles, UserCircle, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../features/auth/context/AuthContext';
 
 const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick = null, theme = 'light' }) => {
@@ -71,6 +71,18 @@ const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick
                     icon={<Activity className="w-4 h-4" />}
                     label="Recovery"
                   />
+                  <NavButton
+                    active={isActive('/profile')}
+                    onClick={() => navigate('/profile')}
+                    icon={<UserCircle className="w-4 h-4" />}
+                    label="Profile"
+                  />
+                  <NavButton
+                    active={isActive('/messages')}
+                    onClick={() => navigate('/messages')}
+                    icon={<MessageSquare className="w-4 h-4" />}
+                    label="Messages"
+                  />
                 </>
               ) : (
                 <>
@@ -92,7 +104,10 @@ const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick
 
             {/* Profile & Logout */}
             <div className={`flex items-center gap-2 sm:gap-4 pl-3 sm:pl-6 border-l ${isDark ? 'border-white/10' : 'border-slate-200/60'}`}>
-              <div className={`${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} flex items-center gap-3 p-1 rounded-xl sm:rounded-2xl border shadow-sm transition-all`}>
+              <button
+                onClick={() => userType === 'patient' && navigate('/profile')}
+                className={`${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} flex items-center gap-3 p-1 rounded-xl sm:rounded-2xl border shadow-sm transition-all hover:border-blue-300`}
+              >
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'} flex items-center justify-center border ${isDark ? 'border-white/10' : 'border-slate-100'} overflow-hidden`}>
                   {profile?.photoURL ? (
                     <img src={profile.photoURL} alt="Avatar" className="w-full h-full object-cover" />
@@ -108,7 +123,7 @@ const NavHeader = ({ userType = 'patient', doctorProfile = null, onSettingsClick
                     {userType}
                   </p>
                 </div>
-              </div>
+              </button>
 
               {onSettingsClick && (
                 <button
@@ -146,16 +161,6 @@ const NavButton = ({ active, onClick, icon, label }) => (
   >
     {icon}
     <span>{label}</span>
-  </button>
-);
-
-const MobileNavButton = ({ active, onClick, icon, label }) => (
-  <button
-    onClick={onClick}
-    className={`flex flex-col items-center gap-1.5 px-6 py-2 transition-all ${active ? 'text-blue-400' : 'text-slate-300'}`}
-  >
-    {icon}
-    <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
   </button>
 );
 
