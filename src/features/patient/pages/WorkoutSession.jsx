@@ -41,7 +41,6 @@ const WorkoutSession = () => {
   const frameDataRef = useRef([]); // Use ref for high-frequency data to avoid re-renders
   const [realTimeFeedback, setRealTimeFeedback] = useState(null);
   const [isDevMode, setIsDevMode] = useState(location.state?.devMode || false);
-  const [frameData, setFrameData] = useState([]);
 
   const availableExercises = Object.entries(AVAILABLE_EXERCISES).map(([id, data]) => ({
     id,
@@ -110,11 +109,6 @@ const WorkoutSession = () => {
     // Store frame data for later analysis
     frameDataRef.current = [...frameDataRef.current, { angles, timestamp, feedback: rtFeedback }].slice(-1000);
 
-    // Periodically update state for UI elements that might need it, but keep it minimal
-    if (frameDataRef.current.length % 10 === 0) {
-      setFrameData(frameDataRef.current);
-    }
-
     // Update current angle dynamically based on exercise
     const primaryAngle = getPrimaryAngle(angles, currentExercise);
     if (primaryAngle !== undefined) {
@@ -130,7 +124,7 @@ const WorkoutSession = () => {
 
     // Detect rep completion
     detectRepCompletion(angles);
-  }, [sessionActive, detectRepCompletion]);
+  }, [sessionActive, detectRepCompletion, currentExercise]);
 
   // Timer effect
   useEffect(() => {
