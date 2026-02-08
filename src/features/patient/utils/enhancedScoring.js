@@ -68,8 +68,22 @@ const calculateAngleAccuracy = (frameData, exerciseType) => {
 
   for (const [joint, range] of Object.entries(idealRanges)) {
     const angles = frameData
-      .map(frame => frame.angles?.[`${joint}Angle`] || frame.angles?.[joint])
-      .filter(angle => angle !== undefined && angle !== 0);
+      .map(frame => {
+        let angle = frame.angles?.[`${joint}Angle`] || frame.angles?.[joint];
+        if (angle === undefined || angle === 0) {
+          const capitalizedJoint = joint.charAt(0).toUpperCase() + joint.slice(1);
+          const left = frame.angles?.[`left${capitalizedJoint}`];
+          const right = frame.angles?.[`right${capitalizedJoint}`];
+          if (left !== undefined || right !== undefined) {
+            const restValue = joint === 'shoulder' ? 0 : 180;
+            const l = left !== undefined ? left : restValue;
+            const r = right !== undefined ? right : restValue;
+            angle = Math.abs(l - restValue) > Math.abs(r - restValue) ? l : r;
+          }
+        }
+        return angle;
+      })
+      .filter(angle => angle !== undefined && (angle !== 0 || joint === 'shoulder'));
 
     if (angles.length === 0) continue;
 
@@ -226,8 +240,22 @@ export const trackRangeOfMotion = (frameData, exerciseType) => {
 
   // Extract all angles for primary joint
   const angles = frameData
-    .map(frame => frame.angles?.[angleKey] || frame.angles?.[primaryJoint])
-    .filter(angle => angle !== undefined && angle !== 0);
+    .map(frame => {
+      let angle = frame.angles?.[angleKey] || frame.angles?.[primaryJoint];
+      if (angle === undefined || angle === 0) {
+        const capitalizedJoint = primaryJoint.charAt(0).toUpperCase() + primaryJoint.slice(1);
+        const left = frame.angles?.[`left${capitalizedJoint}`];
+        const right = frame.angles?.[`right${capitalizedJoint}`];
+        if (left !== undefined || right !== undefined) {
+          const restValue = primaryJoint === 'shoulder' ? 0 : 180;
+          const l = left !== undefined ? left : restValue;
+          const r = right !== undefined ? right : restValue;
+          angle = Math.abs(l - restValue) > Math.abs(r - restValue) ? l : r;
+        }
+      }
+      return angle;
+    })
+    .filter(angle => angle !== undefined && (angle !== 0 || primaryJoint === 'shoulder'));
 
   if (angles.length === 0) {
     return {
