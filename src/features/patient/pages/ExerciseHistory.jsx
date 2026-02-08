@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Activity, Calendar, Clock, Award, FileText, Download, Filter, Search } from 'lucide-react';
 import NavHeader from '../../../shared/components/NavHeader';
 import SessionReport from '../components/SessionReport';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { db } from '../../../lib/firebase/config';
 import { useAuth } from '../../auth/context/AuthContext';
 import { getRecentSessions } from '../services/patientService';
 import { downloadCSV } from '../../../utils/exportUtils';
@@ -12,6 +15,7 @@ const ExerciseHistory = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
+  const [painLogs, setPainLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -32,9 +36,24 @@ const ExerciseHistory = () => {
 
     const fetchSessions = async () => {
       try {
-        // Fetch more sessions for history (e.g., 50)
+        // Fetch sessions
         const data = await getRecentSessions(user.uid, 50);
         setSessions(data);
+
+        // Fetch pain logs
+        const painRef = collection(db, 'pain_logs');
+        const painQuery = query(painRef, where('userId', '==', user.uid), orderBy('timestamp', 'asc'), limit(20));
+        const painSnap = await getDocs(painQuery);
+        const logs = [];
+        painSnap.forEach(doc => {
+          const d = doc.data();
+          logs.push({
+            date: d.timestamp?.toDate()?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) || 'N/A',
+            pain: d.painLevel
+          });
+        });
+        setPainLogs(logs);
+
         setLoading(false);
       } catch (error) {
         console.error('[ExerciseHistory] Error fetching sessions:', error);
@@ -118,6 +137,52 @@ const ExerciseHistory = () => {
           </div>
         )}
       </main>
+    </div>
+  );
+};
+
+const PainTrendChart = ({ data }) => {
+  if (!data || data.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-white mb-10">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h3 className="text-xl font-black text-slate-900">Chronic Pain Trend</h3>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Symptom Intensity Over Time</p>
+        </div>
+        <div className="px-4 py-2 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100">
+          Last {data.length} Logs
+        </div>
+      </div>
+
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data}>
+            <defs>
+              <linearGradient id="colorPain" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#F43F5E" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+            <XAxis dataKey="date" tick={{fontSize: 10, fontWeight: 700, fill: '#94A3B8'}} axisLine={false} tickLine={false} />
+            <YAxis domain={[0, 5]} hide />
+            <Tooltip
+              contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="pain"
+              stroke="#F43F5E"
+              strokeWidth={4}
+              fillOpacity={1}
+              fill="url(#colorPain)"
+              name="Pain Level"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

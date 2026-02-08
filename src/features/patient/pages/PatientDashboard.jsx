@@ -30,6 +30,7 @@ import PatientSettingsModal from '../components/modals/PatientSettingsModal';
 import NeuralChatModal from '../../doctor/components/modals/NeuralChatModal';
 import AppointmentModal from '../../../shared/components/modals/AppointmentModal';
 import VideoConsultationModal from '../../../shared/components/modals/VideoConsultationModal';
+import MedicationReminders from '../components/MedicationReminders';
 import { useAuth } from '../../auth/context/AuthContext';
 import { updateUserProfile } from '../../auth/services/authService';
 import {
@@ -294,6 +295,20 @@ const PatientDashboard = () => {
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-6 sm:mb-8">Daily Roadmap</h3>
                 <div className="space-y-6">
+                  <div
+                    onClick={() => navigate('/visuals')}
+                    className="flex items-center gap-5 p-5 rounded-[2rem] bg-blue-50 border border-blue-100 hover:bg-white hover:shadow-xl hover:border-blue-200 transition-all group/item cursor-pointer"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-sm transition-all group-hover/item:scale-110">
+                      <Image className="w-7 h-7 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-blue-800 truncate leading-none mb-1.5">Visual Progress</p>
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none">Photo Gallery</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-blue-300 group-hover/item:text-blue-500 transition-colors" />
+                  </div>
+
                   {todayRoutine.map((ex, idx) => (
                     <div key={idx} className="flex items-center gap-5 p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-xl hover:border-blue-100 transition-all group/item">
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-all group-hover/item:scale-110 ${ex.completed ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400'}`}>
@@ -381,6 +396,8 @@ const PatientDashboard = () => {
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-600/10 rounded-full blur-[60px] -ml-20 -mb-20"></div>
             </div>
+
+            <MedicationReminders />
 
             {/* Achievement Widget */}
             <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[3rem] p-10 text-white shadow-2xl shadow-indigo-200">

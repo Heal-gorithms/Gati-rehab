@@ -9,6 +9,7 @@ const LandingPage = lazy(() => import('../../features/auth/pages/LandingPage'));
 const LoginPage = lazy(() => import('../../features/auth/pages/LoginPage'));
 const PatientDashboard = lazy(() => import('../../features/patient/pages/PatientDashboard'));
 const PatientProfile = lazy(() => import('../../features/patient/pages/PatientProfile'));
+const ProgressPhotos = lazy(() => import('../../features/patient/pages/ProgressPhotos'));
 const ExerciseHistory = lazy(() => import('../../features/patient/pages/ExerciseHistory'));
 const WorkoutSession = lazy(() => import('../../features/patient/pages/WorkoutSession'));
 const DoctorDashboard = lazy(() => import('../../features/doctor/pages/DoctorDashboard'));
@@ -68,6 +69,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRole="patient">
               <PatientDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/visuals"
+          element={
+            <ProtectedRoute allowedRole="patient">
+              <ProgressPhotos />
             </ProtectedRoute>
           }
         />
