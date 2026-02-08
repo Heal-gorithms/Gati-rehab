@@ -31,11 +31,14 @@ const AppointmentModal = ({ isOpen, onClose, patientId = null, doctorId = null, 
   useEscapeKey(onClose, isOpen);
 
   useEffect(() => {
-    if (!isOpen || (!patientId && !doctorId)) return;
+    if (!isOpen || !user) return;
+
+    // Use userType from either userData or if we're in doctor scope
+    const userRole = userData?.userType || (doctorId === user.uid ? 'doctor' : 'patient');
 
     const q = query(
       collection(db, 'appointments'),
-      where(userData?.userType === 'doctor' ? 'doctorId' : 'patientId', '==', user.uid),
+      where(userRole === 'doctor' ? 'doctorId' : 'patientId', '==', user.uid),
       orderBy('timestamp', 'desc')
     );
 
@@ -48,7 +51,7 @@ const AppointmentModal = ({ isOpen, onClose, patientId = null, doctorId = null, 
     });
 
     return () => unsubscribe();
-  }, [isOpen, patientId, doctorId, user.uid, userData]);
+  }, [isOpen, user, userData, doctorId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

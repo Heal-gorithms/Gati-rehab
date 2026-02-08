@@ -37,8 +37,11 @@ service cloud.firestore {
     
     // 1. Users collection 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isDoctorOf(userId) || isPatientOf(userId) || isAdmin();
-      allow write: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || (
+        isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'doctor'
+      );
     }
     
     // 2. Routines Collection

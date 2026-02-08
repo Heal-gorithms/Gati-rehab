@@ -76,12 +76,6 @@ const NavHeader = memo(({ userType = 'patient', doctorProfile = null, onSettings
                     label="Recovery"
                   />
                   <NavButton
-                    active={isActive('/profile')}
-                    onClick={() => navigate('/profile')}
-                    icon={<UserCircle className="w-4 h-4" />}
-                    label="Profile"
-                  />
-                  <NavButton
                     active={isActive('/messages')}
                     onClick={() => navigate('/messages')}
                     icon={<MessageSquare className="w-4 h-4" />}

@@ -4,7 +4,7 @@ import { X, Calendar, Clock, User, Plus, Filter, Check, Trash2 } from 'lucide-re
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase/config';
 
-const SchedulerModal = ({ isOpen, onClose, doctorId, patients }) => {
+const SchedulerModal = ({ isOpen, onClose, doctorId, patients, onJoinCall }) => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -128,10 +128,16 @@ const SchedulerModal = ({ isOpen, onClose, doctorId, patients }) => {
                                                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(appt.date).toLocaleDateString()}</span>
                                                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {appt.time}</span>
                                                     <span className="px-2 py-0.5 bg-slate-100 rounded-full text-slate-600">{appt.type}</span>
-                                                    {appt.meetingLink && (
-                                                        <a href={appt.meetingLink} target="_blank" rel="noopener noreferrer" className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full flex items-center gap-1 hover:bg-blue-200 transition-colors">
+                                                    {appt.status === 'scheduled' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                onJoinCall?.(`Gati_Session_${appt.id}`);
+                                                                onClose();
+                                                            }}
+                                                            className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full flex items-center gap-1 hover:bg-blue-200 transition-colors"
+                                                        >
                                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div> Join Call
-                                                        </a>
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>

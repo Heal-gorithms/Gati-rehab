@@ -7,6 +7,7 @@ import {
   getDocs,
   onSnapshot,
   setDoc,
+  updateDoc,
   serverTimestamp,
   addDoc,
   deleteDoc
@@ -133,6 +134,29 @@ export const getPatientDetails = async (patientId) => {
     };
   } catch (error) {
     console.error('[DoctorService] Get patient details error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Disconnect a patient from a doctor
+ */
+export const deletePatientFromDoctor = async (doctorId, patientId) => {
+  try {
+    // 1. Remove from doctor's patient list
+    await deleteDoc(doc(db, 'doctor_patients', doctorId, 'patients', patientId));
+
+    // 2. Remove doctorId from patient's user document
+    await updateDoc(doc(db, 'users', patientId), {
+      doctorId: null
+    });
+
+    // Audit log
+    await logAction(doctorId, 'DELETE_PATIENT', { patientId });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[DoctorService] Delete patient error:', error);
     throw error;
   }
 };
@@ -341,7 +365,19 @@ export const getROMTrendData = async () => {
  */
 export const addPatientToDoctor = async (doctorId, patientData) => {
   try {
-    const patientId = patientData.uid || doc(collection(db, 'users')).id;
+    // 1. Check if user already exists by email
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', patientData.email));
+    const querySnapshot = await getDocs(q);
+
+    let patientId;
+    if (!querySnapshot.empty) {
+      // User exists, use their UID
+      patientId = querySnapshot.docs[0].id;
+    } else {
+      // New user placeholder
+      patientId = doc(collection(db, 'users')).id;
+    }
 
     await setDoc(doc(db, 'users', patientId), {
       ...patientData,

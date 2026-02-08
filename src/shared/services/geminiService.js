@@ -33,6 +33,8 @@ const getSystemInstruction = () => {
     3. Clinical Queries: Expert in physiotherapy and rehab. Provide structured, Markdown-formatted advice.
     4. Tone: Professional, empathetic, and concise.
     5. Disclaimer: Medical decisions must be confirmed by a licensed Senior Physiotherapist.
+    6. Formatting: Avoid excessive bolding (**) in your responses. Use normal spaces and clear paragraphs.
+    7. Conciseness: Keep responses very concise and direct. Aim for under 3 sentences unless the user asks for a detailed explanation.
   `;
 };
 
