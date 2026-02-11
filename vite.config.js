@@ -23,10 +23,10 @@ export default defineConfig({
             if (id.includes('@mediapipe') || id.includes('@google')) {
               return 'ai-engine';
             }
-            if (id.includes('recharts') || id.includes('lucide-react')) {
+            if (id.includes('recharts')) {
               return 'ui-libs';
             }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom') || id.includes('lucide-react')) {
               return 'react-vendor';
             }
             return 'vendor'; // all other package goes here
