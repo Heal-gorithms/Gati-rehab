@@ -12,3 +12,8 @@
 **Vulnerability:** Permissive update rules on the 'users' collection allowed users to change their own 'userType' or 'role'. Additionally, any authenticated user could create notifications for any other user.
 **Learning:** Checking for 'isOwner' is not enough for the 'users' collection; we must also ensure that sensitive identity fields are not modified during self-updates using 'request.resource.data.field == resource.data.field'.
 **Prevention:** Implement a 'isNotChangingType()' helper and apply it to 'users' updates. Restrict 'notifications' creation to valid doctor-patient-admin relationships.
+
+## 2026-02-15 - [Privilege Escalation on Create and Excessive Doctor Data Exposure]
+**Vulnerability:** Firestore rules allowed new users to self-assign any 'userType' (including 'admin') during creation. Additionally, doctors had read access to all user documents, exposing sensitive information of other doctors and admins.
+**Learning:** Security rules must validate data on 'create' just as strictly as on 'update'. Overly broad read permissions for professional roles can lead to internal data leaks.
+**Prevention:** Explicitly block sensitive role assignment in 'create' rules for new owners and restrict role-based read access to relevant targets (e.g., doctors only reading patients).

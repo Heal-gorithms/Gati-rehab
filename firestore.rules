@@ -58,12 +58,13 @@ service cloud.firestore {
 
     // 1. Users collection 
     match /users/{userId} {
-      // Allow read if owner, doctor, admin, or patient of the user (if user is doctor)
-      // Doctors need to be able to find patients by email, so they can read all docs
-      allow read: if isOwner(userId) || isDoctor() || isAdmin() || isPatientOf(userId);
+      // Allow read if owner, admin, or if target is a patient (readable by doctors)
+      allow read: if isOwner(userId) || isAdmin() || isPatientOf(userId) ||
+                     (isDoctor() && resource.data.userType == 'patient');
 
-      // Allow create if owner (signup) or doctor/admin (adding patient)
-      allow create: if isOwner(userId) || isDoctor() || isAdmin();
+      // Allow create if owner (signup - but block self-admin except for bootstrap UID) or doctor/admin
+      allow create: if (isOwner(userId) && (request.resource.data.userType != 'admin' || userId == 'uK7m9926Oua8JQAt3IpiZ4AWDyM2')) ||
+                     isDoctor() || isAdmin();
 
       // Allow update if owner (but not changing type), doctor (if patient is unassigned or assigned to them), or admin
       allow update: if (isOwner(userId) && isNotChangingType()) ||
