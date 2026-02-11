@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { Play, Pause, RotateCcw, Info, Activity, ShieldCheck } from 'lucide-react';
 
 /**
  * High-Performance Anatomical Visualization Engine
  * Simulates exercise movements using smooth kinematic interpolation
  */
-const ExerciseDemo = ({ exerciseId, exerciseData, isCompact = false }) => {
+const ExerciseDemo = memo(({ exerciseId, isCompact = false }) => {
     const canvasRef = useRef(null);
     const animationRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [phaseText, setPhaseText] = useState('Reference Guide');
     const frameRef = useRef(0);
 
     useEffect(() => {
@@ -24,10 +25,14 @@ const ExerciseDemo = ({ exerciseId, exerciseData, isCompact = false }) => {
 
             // Clear and draw background
             ctx.clearRect(0, 0, width, height);
-            drawMedicalGrid(ctx, width, height, frameRef.current);
+            drawMedicalGrid(ctx, width, height);
 
             // Draw Anatomical Skeleton
             drawPose(ctx, width, height, frameRef.current, exerciseId);
+
+            // Update Phase Text (Only if changed to avoid redundant renders)
+            const currentPhaseText = getPhaseText(exerciseId, frameRef.current);
+            setPhaseText(prev => prev !== currentPhaseText ? currentPhaseText : prev);
 
             frameRef.current = (frameRef.current + 1) % 120;
             animationRef.current = requestAnimationFrame(animate);
@@ -63,7 +68,7 @@ const ExerciseDemo = ({ exerciseId, exerciseData, isCompact = false }) => {
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
                             <span className="text-[10px] font-black text-blue-100 uppercase tracking-[0.2em]">
-                                {getPhaseText(exerciseId, frameRef.current)}
+                                {phaseText}
                             </span>
                         </div>
                     </div>
@@ -112,11 +117,11 @@ const ExerciseDemo = ({ exerciseId, exerciseData, isCompact = false }) => {
             )}
         </div>
     );
-};
+});
 
 // ============ RENDERING ENGINE ============
 
-const drawMedicalGrid = (ctx, w, h, frame) => {
+const drawMedicalGrid = (ctx, w, h) => {
     ctx.strokeStyle = 'rgba(59, 130, 246, 0.03)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += 30) {
@@ -283,7 +288,6 @@ const calculateKinematics = (cx, by, phase, cycle, id = '', t) => {
         sk.ankleR.y -= bend;
         sk.ankleR.x += bend * 0.3;
     } else if (lid.includes('laterallegraise')) {
-        const raise = phase * 70 * scale;
         const ang = -phase * Math.PI / 6; // Side abduction angle
         sk.kneeR = {
             x: sk.hipR.x + Math.cos(ang + Math.PI / 2) * 90 * scale,
