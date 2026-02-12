@@ -78,19 +78,17 @@ service cloud.firestore {
 
     // 1. Users collection 
     match /users/{userId} {
-      // Allow read if owner, doctor, admin, or patient of the user (if user is doctor)
-      // Doctors need to be able to find patients by email, so they can read all docs
-      allow read: if isOwner(userId) || isDoctor() || isAdmin() || isPatientOf(userId);
+      // Allow read if owner, admin, or if target is a patient (readable by doctors)
+      allow read: if isOwner(userId) || isAdmin() || isPatientOf(userId) ||
+                     (isDoctor() && resource.data.userType == 'patient');
 
-      // Allow create if owner (signup) or doctor/admin (adding patient)
-      // Must also validate that userType/role is not being escalated
-      allow create: if (isOwner(userId) || isDoctor() || isAdmin()) && isNotChangingType();
+      // Allow create if owner (signup - but block self-admin except for bootstrap UID) or doctor/admin
+      allow create: if (isOwner(userId) && (request.resource.data.userType != 'admin' || userId == 'uK7m9926Oua8JQAt3IpiZ4AWDyM2')) ||
+                     isDoctor() || isAdmin();
 
-      // Allow update if owner, doctor (if patient is unassigned or assigned to them), or admin
-      // All non-admin updates must not change userType or role
-      allow update: if ((isOwner(userId)) ||
-                     (isDoctor() && resource.data.userType == 'patient' && (resource.data.doctorId == request.auth.uid || resource.data.doctorId == null))) &&
-                     isNotChangingType() ||
+      // Allow update if owner (but not changing type), doctor (if patient is unassigned or assigned to them), or admin
+      allow update: if (isOwner(userId) && isNotChangingType()) ||
+                     (isDoctor() && resource.data.userType == 'patient' && (resource.data.doctorId == request.auth.uid || resource.data.doctorId == null)) ||
                      isAdmin();
 
       allow delete: if isAdmin();
