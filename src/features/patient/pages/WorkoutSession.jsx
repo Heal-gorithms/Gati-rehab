@@ -21,7 +21,7 @@ import ExerciseDemo from '../components/ExerciseDemo';
 import { useAuth } from '../../auth/context/AuthContext';
 import { saveSession } from '../services/sessionService';
 import { markExerciseCompleted } from '../services/patientService';
-import { calculateFormQualityScore, trackRangeOfMotion } from '../utils/enhancedScoring';
+import { calculateFormQualityScore } from '../utils/enhancedScoring';
 import { AVAILABLE_EXERCISES } from '../../ai/utils/secondaryExercises';
 import { getPrimaryAngle } from '../../ai/utils/angleCalculations';
 import { logAction } from '../../../shared/utils/auditLogger';
@@ -48,9 +48,9 @@ const WorkoutSession = () => {
   const frameDataRef = useRef([]);
   const [realTimeFeedback, setRealTimeFeedback] = useState(null);
   const [isDevMode, setIsDevMode] = useState(location.state?.devMode || false);
-  const [modelStatus, setModelStatus] = useState({ isLoaded: false, error: null });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showDemoOverlay, setShowDemoOverlay] = useState(true);
+  const lastUiUpdateRef = useRef(0);
 
   const availableExercises = useMemo(() => Object.entries(AVAILABLE_EXERCISES).map(([id, data]) => ({
     id,
@@ -155,22 +155,33 @@ const WorkoutSession = () => {
     }
   }, [currentExercise, updateQualityScore]);
 
-  const handleStatusChange = useCallback((status) => {
-    setModelStatus(status);
-  }, []);
-
   const handlePoseDetected = useCallback((poseData) => {
     if (!sessionActive) return;
     const { angles, feedback: rtFeedback, timestamp } = poseData;
-    frameDataRef.current = [...frameDataRef.current, { angles, timestamp, feedback: rtFeedback }].slice(-1000);
+
+    // Optimization: Mutate ref array instead of spread+slice to reduce GC pressure (O(1) vs O(N))
+    frameDataRef.current.push({ angles, timestamp, feedback: rtFeedback });
+    if (frameDataRef.current.length > 1000) {
+      frameDataRef.current.shift();
+    }
+
     const primaryAngle = getPrimaryAngle(angles, currentExercise);
-    if (primaryAngle !== undefined) {
-      setCurrentAngle(Math.round(primaryAngle));
+
+    // Performance Boost: Throttle UI state updates to ~15 FPS (66ms)
+    // Users don't need 60FPS updates for text/angles, and this significantly reduces reconciliation overhead
+    const now = Date.now();
+    if (now - lastUiUpdateRef.current > 66) {
+      if (primaryAngle !== undefined) {
+        setCurrentAngle(Math.round(primaryAngle));
+      }
+      if (rtFeedback) {
+        setFeedback(rtFeedback.message);
+        setRealTimeFeedback(rtFeedback);
+      }
+      lastUiUpdateRef.current = now;
     }
-    if (rtFeedback) {
-      setFeedback(rtFeedback.message);
-      setRealTimeFeedback(rtFeedback);
-    }
+
+    // Rep detection must run every frame to ensure no peak/return transitions are missed
     detectRepCompletion(angles);
   }, [sessionActive, detectRepCompletion, currentExercise]);
 
@@ -317,7 +328,6 @@ const WorkoutSession = () => {
               <AIEngine
                 onPoseDetected={handlePoseDetected}
                 exerciseType={currentExercise}
-                onStatusChange={handleStatusChange}
                 repCount={repCount}
                 settings={aiSettings}
               />
@@ -340,7 +350,6 @@ const WorkoutSession = () => {
 
                   <ExerciseDemo
                     exerciseId={currentExercise}
-                    exerciseData={AVAILABLE_EXERCISES[currentExercise]}
                     isCompact={true}
                   />
 
@@ -403,7 +412,6 @@ const WorkoutSession = () => {
 
                 <ExerciseDemo
                   exerciseId={currentExercise}
-                  exerciseData={AVAILABLE_EXERCISES[currentExercise]}
                   isCompact={true}
                 />
 
