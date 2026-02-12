@@ -449,7 +449,7 @@ const PatientDashboard = () => {
                 <div
                   key={idx}
                   onClick={() => {
-                    const exId = ex.id || ex.name?.toLowerCase().replace(/\s+/g, '-');
+                    const exId = ex.id || String(ex.name || '').toLowerCase().replace(/\s+/g, '-');
                     navigate('/workout', { state: { exerciseId: exId } });
                   }}
                   className="flex items-center gap-5 p-5 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer group"

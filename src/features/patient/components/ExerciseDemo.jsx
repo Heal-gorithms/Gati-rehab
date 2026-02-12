@@ -209,7 +209,7 @@ const drawPose = (ctx, w, h, frame, id) => {
 
 const calculateKinematics = (cx, by, phase, cycle, id = '', t) => {
     // Normalize ID for robust matching
-    const lid = id.toLowerCase().replace(/[-_ ]/g, '');
+    const lid = String(id || '').toLowerCase().replace(/[-_ ]/g, '');
 
     // Calibrated scale to ensure full head visibility and body fit
     const scale = 2.0;
@@ -328,7 +328,7 @@ const calculateKinematics = (cx, by, phase, cycle, id = '', t) => {
 };
 
 const getTargetJoints = (id = '') => {
-    const lid = id.toLowerCase().replace(/[-_ ]/g, '');
+    const lid = String(id || '').toLowerCase().replace(/[-_ ]/g, '');
     if (lid.includes('knee') || lid.includes('squat')) return ['knee', 'hip'];
     if (lid.includes('shoulder')) return ['shoulder', 'arm'];
     if (lid.includes('elbow')) return ['arm'];
