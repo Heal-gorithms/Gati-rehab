@@ -38,6 +38,16 @@ src/
 ```
 
 > **[View Detailed File Structure Documentation](./FILE_STRUCTURE.md)** - complete breakdown of all files and directories.
+>
+> ## 📋 Prerequisites
+
+Before running Gati Rehab locally, make sure you have:
+
+- Node.js installed
+- npm installed
+- Git installed
+- A modern browser with camera access
+- Required Firebase configuration/environment variables
 
 ## 🛠️ Setup Instructions
 
